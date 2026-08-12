@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!--
+    DocSearch favicon — bright, high-contrast, tab-readable
+    Vivid #388bfd blue tile · white bold document + magnifier
+    Reads clearly at 16×16px in browser tabs
+  -->
+
+  <!-- Vivid GitHub-blue background tile -->
+  <rect width="64" height="64" rx="13" fill="#1f6feb"/>
+
+  <!-- Subtle inner highlight (top edge) for depth -->
+  <rect x="2" y="2" width="60" height="28" rx="11" fill="white" opacity="0.06"/>
+
+  <!--
+    Document — bold, white, thick strokes
+    Simplified for tiny-size readability: no fold line, just shape
+  -->
+  <!-- Document body -->
+  <rect x="10" y="9" width="26" height="33" rx="3" fill="white"/>
+  <!-- Folded corner cutout — dark blue triangle -->
+  <path d="M28 9 L36 17 L28 17 Z" fill="#1f6feb"/>
+  <!-- Fold edge -->
+  <path d="M28 9 L36 17" stroke="#388bfd" stroke-width="1"/>
+
+  <!-- Text lines on document — blue (readable against white) -->
+  <rect x="14" y="22" width="13" height="2.5" rx="1.25" fill="#388bfd" opacity="0.6"/>
+  <rect x="14" y="27" width="10" height="2.5" rx="1.25" fill="#388bfd" opacity="0.45"/>
+  <rect x="14" y="32" width="7"  height="2.5" rx="1.25" fill="#388bfd" opacity="0.35"/>
+
+  <!--
+    Magnifier — bold white ring + handle
+    Overlapping doc bottom-right, very thick for tab readability
+  -->
+  <!-- Dark backing circle (separation from doc) -->
+  <circle cx="42" cy="42" r="13" fill="#1f6feb"/>
+  <!-- White magnifier ring — thick -->
+  <circle cx="42" cy="42" r="10" fill="none" stroke="white" stroke-width="3.5"/>
+  <!-- Inner tint -->
+  <circle cx="42" cy="42" r="6.5" fill="white" opacity="0.12"/>
+  <!-- Handle — bold, rounded -->
+  <line x1="49.5" y1="49.5" x2="56" y2="56" stroke="white" stroke-width="4" stroke-linecap="round"/>
+</svg>
