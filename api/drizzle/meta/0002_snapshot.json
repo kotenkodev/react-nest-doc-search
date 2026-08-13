@@ -1,0 +1,89 @@
+{
+  "id": "ae400b97-0bb6-465c-bde2-f33255553b42",
+  "prevId": "5ebc10a8-cf58-4bd1-a220-5c2173a7d7cd",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.documents": {
+      "name": "documents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ownerEmail": {
+          "name": "ownerEmail",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "storageFilename": {
+          "name": "storageFilename",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userFilename": {
+          "name": "userFilename",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadedAt": {
+          "name": "uploadedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "documents_storageFilename_unique": {
+          "name": "documents_storageFilename_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "storageFilename"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.status": {
+      "name": "status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "success",
+        "error"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

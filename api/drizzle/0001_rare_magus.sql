@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ADD CONSTRAINT "documents_storageFilename_unique" UNIQUE("storageFilename");
