@@ -22,6 +22,20 @@
       "when": 1786636171454,
       "tag": "0002_graceful_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786956977458,
+      "tag": "0003_careful_may_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786966588823,
+      "tag": "0004_abnormal_penance",
+      "breakpoints": true
     }
   ]
 }
