@@ -26,10 +26,7 @@ async function bootstrap() {
   );
 
   const appConfiguration = configService.get<AppConfig>('app');
-  if (!appConfiguration) {
-    throw new Error('App configuration is missing');
-  }
-  app.useGlobalFilters(new GlobalExceptionFilter(appConfiguration));
+  app.useGlobalFilters(new GlobalExceptionFilter(appConfiguration!));
 
   const port = configService.get<number>('app.port') || 3000;
   await app.listen(port);

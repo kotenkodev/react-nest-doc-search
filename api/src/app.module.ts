@@ -14,6 +14,7 @@ import { SseModule } from './modules/sse/sse.module';
 import { SqsWorkerModule } from './modules/sqs-worker/sqs-worker.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { GlobalExceptionFilter } from './shared/filters/http-exception.filter';
+import { ParserModule } from './modules/parser/parser.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { GlobalExceptionFilter } from './shared/filters/http-exception.filter';
     SearchModule,
     SseModule,
     SqsWorkerModule,
+    ParserModule,
   ],
   controllers: [AppController],
   providers: [
