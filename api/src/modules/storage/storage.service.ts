@@ -42,12 +42,14 @@ export class StorageService {
     });
   }
 
-  async getDownloadUrl(key: string) {
+  async getDownloadUrl(key: string, userFilename?: string) {
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
       Key: key,
+      ResponseContentDisposition: userFilename
+        ? `attachment; filename="${encodeURIComponent(userFilename)}"`
+        : 'attachment',
     });
-
     return await getSignedUrl(this.client, command, {
       expiresIn: DOWNLOAD_TTL_SECONDS,
     });

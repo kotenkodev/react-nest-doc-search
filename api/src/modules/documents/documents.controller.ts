@@ -27,6 +27,14 @@ export class DocumentsController {
     return this.documentsService.getDocuments(userEmail, query.searchText);
   }
 
+  @Get(':id/download')
+  async getDownloadUrl(
+    @CurrentUserEmail() userEmail: string,
+    @Param('id') id: string,
+  ) {
+    return this.documentsService.getDownloadUrl(userEmail, id);
+  }
+
   @Get(':id')
   async getDocumentById(
     @CurrentUserEmail() userEmail: string,

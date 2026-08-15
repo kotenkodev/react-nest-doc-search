@@ -21,7 +21,7 @@ export class DocumentsService {
   async getDocuments(
     email: string,
     searchText: string | undefined,
-  ): Promise<Document[]> {
+  ): Promise<{ documents: Document[]; total: number }> {
     // if (searchText) {
     //   const documents = await this.repository.getDocumentsBySearch(
     //     email,
@@ -30,7 +30,10 @@ export class DocumentsService {
     // }
     const documents = await this.repository.getDocuments(email);
 
-    return documents;
+    return {
+      documents,
+      total: documents.length,
+    };
   }
 
   async getDocumentById(email: string, id: string): Promise<Document> {
@@ -45,6 +48,18 @@ export class DocumentsService {
     }
 
     return document;
+  }
+
+  async getDownloadUrl(
+    email: string,
+    id: string,
+  ): Promise<{ downloadUrl: string }> {
+    const document = await this.getDocumentById(email, id);
+    const downloadUrl = await this.storage.getDownloadUrl(
+      document.storageFilename,
+      document.userFilename,
+    );
+    return { downloadUrl };
   }
 
   async createDocument(
