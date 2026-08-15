@@ -7,6 +7,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { documentToast } from "@/utils/toast";
+
 export const useDocumentsQuery = (searchText?: string) => {
   return useQuery({
     queryKey: ["documents", searchText],
@@ -18,18 +20,32 @@ export const useUploadDocumentMutation = () => {
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState<number>(0);
   const mutation = useMutation({
-    mutationFn: (file: File) => {
-      setProgress(0);
-      return uploadDocument(file, (percent) => setProgress(percent));
+    mutationKey: ["uploadDocument"],
+    mutationFn: async (file: File) => {
+      const toastId = `upload-${Date.now()}`;
+      documentToast.uploading(file.name, 0, toastId);
+
+      try {
+        const newDoc = await uploadDocument(file, (percent) => {
+          setProgress(percent);
+          if (percent >= 100) {
+            documentToast.pending(file.name, toastId);
+          } else {
+            documentToast.uploading(file.name, percent, toastId);
+          }
+        });
+
+        documentToast.success(file.name, "Successfully uploaded.", toastId);
+        return newDoc;
+      } catch (error: any) {
+        const message =
+          error.response?.data?.message || error.message || "Upload failed";
+        documentToast.error(file.name, message, toastId);
+        throw error;
+      }
     },
-    onSuccess: (newDoc) => {
-      toast.success(`"${newDoc.userFilename}" uploaded successfully!`);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
-    },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || error.message || "Upload failed";
-      toast.error(message);
     },
     onSettled: () => {
       setTimeout(() => setProgress(0), 1000);
@@ -44,7 +60,9 @@ export const useUploadDocumentMutation = () => {
 export const useDeleteDocumentMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteDocument(id),
+    mutationFn: (id: string) => {
+      deleteDocument(id);
+    },
     onSuccess: () => {
       toast.success("Document deleted");
       queryClient.invalidateQueries({ queryKey: ["documents"] });
