@@ -2,9 +2,10 @@ import type { DocumentItem } from "@/types/document.type";
 import { api } from "./apiClient";
 import { getMimeType } from "@/utils/document-parse";
 import axios from "axios";
+import type { GetDocumentsResponse } from "@/types/api-response";
 
 export const getDocuments = async (searchText: string) => {
-  const response = await api.get<DocumentItem[]>("/documents", {
+  const response = await api.get<GetDocumentsResponse>("/documents", {
     params: searchText ? { searchText } : undefined,
   });
   return response.data;
@@ -63,6 +64,26 @@ export const uploadDocument = async (
 
   await uploadFileToS3(presignedPostUrl, file, mimeType, onProgress);
   return document;
+};
+
+export const getDocumentDownloadUrl = async (id: string): Promise<string> => {
+  const response = await api.get<{ downloadUrl: string }>(
+    `/documents/${id}/download`,
+  );
+  return response.data.downloadUrl;
+};
+
+export const downloadDocumentFile = async (
+  id: string,
+  userFilename: string,
+) => {
+  const downloadUrl = await getDocumentDownloadUrl(id);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = userFilename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 };
 
 export const deleteDocument = async (id: string) => {
