@@ -8,6 +8,7 @@ import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import { Auth } from "./pages/Auth";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import AppToaster from "@/components/AppToaster";
 import "@primer/primitives/dist/css/functional/themes/light.css";
 import "@primer/primitives/dist/css/functional/themes/dark.css";
 
@@ -37,8 +38,8 @@ function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <AppToaster />
         </ThemeProvider>
-        <Toaster />
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
