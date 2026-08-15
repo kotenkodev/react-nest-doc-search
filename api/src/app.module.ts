@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
@@ -15,6 +15,7 @@ import { SqsWorkerModule } from './modules/sqs-worker/sqs-worker.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { GlobalExceptionFilter } from './shared/filters/http-exception.filter';
 import { ParserModule } from './modules/parser/parser.module';
+import { LoggingMiddleware } from './shared/middleware/logging.middleware';
 
 @Module({
   imports: [
@@ -40,4 +41,8 @@ import { ParserModule } from './modules/parser/parser.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(LoggingMiddleware).forRoutes('*');
+  }
+}

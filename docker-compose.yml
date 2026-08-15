@@ -47,7 +47,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -u admin:Admin12345! -s http://localhost:9200/_cluster/health | grep -q 'status'",
+          "curl -u admin:admin -s http://localhost:9200/_cluster/health | grep -q 'status'",
         ]
       interval: 10s
       timeout: 5s
@@ -62,7 +62,7 @@ services:
     environment:
       - OPENSEARCH_HOSTS=["http://opensearch:9200"]
       - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=Admin12345!
+      - OPENSEARCH_PASSWORD=admin
     depends_on:
       opensearch:
         condition: service_healthy

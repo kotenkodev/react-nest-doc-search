@@ -2,11 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { GlobalExceptionFilter } from './shared/filters/http-exception.filter';
-import { ValidationPipe } from '@nestjs/common/pipes';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { type AppConfig } from './config/app.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+  const app = await NestFactory.create(AppModule, {
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+  });
   const configService = app.get(ConfigService);
 
   const corsOrigin =
@@ -30,5 +33,6 @@ async function bootstrap() {
 
   const port = configService.get<number>('app.port') || 3000;
   await app.listen(port);
+  logger.log(`Application is running on: http://localhost:${port}`);
 }
 void bootstrap();
