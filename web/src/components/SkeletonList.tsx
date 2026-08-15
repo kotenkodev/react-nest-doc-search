@@ -3,7 +3,7 @@ import { Table } from "@primer/react/experimental";
 
 export default function SkeletonList() {
   return (
-    <>
+    <div className="mx-auto max-w-6xl">
       <Table.Container>
         <Table.Title as="h2" id="documents-loading">
           Documents
@@ -43,6 +43,6 @@ export default function SkeletonList() {
         }}
         showPages
       />
-    </>
+    </div>
   );
 }

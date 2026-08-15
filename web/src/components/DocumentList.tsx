@@ -51,7 +51,7 @@ export default function FilesList() {
 
   if (!dummyFiles) {
     return (
-      <Card className="mt-5!">
+      <Card className="mt-5! mx-auto max-w-2xl">
         <Blankslate>
           <Blankslate.Visual>
             <BookIcon size="medium" />
@@ -70,7 +70,7 @@ export default function FilesList() {
   }
 
   return (
-    <>
+    <div className="mx-auto max-w-6xl">
       <Table.Container>
         <Table.Title as="h3" id="files-list-title">
           Documents
@@ -166,6 +166,6 @@ export default function FilesList() {
         }}
         showPages
       />
-    </>
+    </div>
   );
 }

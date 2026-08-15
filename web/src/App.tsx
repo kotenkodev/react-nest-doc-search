@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import PublicRoute from "./components/layout/PublicRoute";
@@ -22,6 +22,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
             </Route>
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ThemeProvider>
       <Toaster />
