@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Master Orchestrator Stack - Deploys Storage, Search, and Compute Stacks"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+
+Resources:
+  StorageStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://my-template-bucket.s3.amazonaws.com/storage.yaml
+      Parameters:
+        Environment: !Ref Environment
+
+  SearchStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://my-template-bucket.s3.amazonaws.com/search.yaml
+      Parameters:
+        Environment: !Ref Environment
+
+  ComputeStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://my-template-bucket.s3.amazonaws.com/compute.yaml
+      Parameters:
+        Environment: !Ref Environment
+        QueueArn: !GetAtt StorageStack.Outputs.DocQueueArn
+        BucketArn: !GetAtt StorageStack.Outputs.DocumentBucketArn
+
+Outputs:
+  DocumentBucketName:
+    Value: !GetAtt StorageStack.Outputs.DocumentBucketName
+  ReactWebBucketName:
+    Value: !GetAtt StorageStack.Outputs.WebBucketName
+  ReactWebWebsiteURL:
+    Value: !GetAtt StorageStack.Outputs.WebBucketWebsiteURL
+  DocQueueUrl:
+    Value: !GetAtt StorageStack.Outputs.DocQueueUrl
+  OpenSearchEndpoint:
+    Value: !GetAtt SearchStack.Outputs.DomainEndpoint
+  EC2PublicIp:
+    Value: !GetAtt ComputeStack.Outputs.InstancePublicIp

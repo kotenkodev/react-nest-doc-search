@@ -1,10 +1,10 @@
- FROM node:18-alpine AS builder
+FROM node:18-alpine AS builder
 
- WORKDIR /usr/src/app
+WORKDIR /usr/src/app
 
- COPY package*.json ./
+COPY package*.json ./
 
- RUN npm ci
+RUN npm ci
 
 COPY . .
 

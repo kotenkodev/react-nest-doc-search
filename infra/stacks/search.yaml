@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Search Stack - AWS OpenSearch Domain"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+
+Resources:
+  OpenSearchDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      DomainName: !Sub "doc-search-${Environment}"
+      EngineVersion: "OpenSearch_2.11"
+      ClusterConfig:
+        InstanceType: t3.small.search
+        InstanceCount: 1
+        DedicatedMasterEnabled: false
+        ZoneAwarenessEnabled: false
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 10
+        VolumeType: gp3
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true
+      DomainEndpointOptions:
+        EnforceHTTPS: true
+        TLSSecurityPolicy: Policy-Min-TLS-1-2-2019-07
+
+Outputs:
+  DomainEndpoint:
+    Value: !GetAtt OpenSearchDomain.DomainEndpoint
+    Export:
+      Name: !Sub "${AWS::StackName}-DomainEndpoint"
+  DomainArn:
+    Value: !GetAtt OpenSearchDomain.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-DomainArn"

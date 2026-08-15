@@ -1,0 +1,19 @@
+name: Deploy NestJS to EC2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test NestJS
+        run: |
+          cd api
+          npm ci
+          npm run test
