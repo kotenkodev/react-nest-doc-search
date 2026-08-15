@@ -1,55 +1,32 @@
 import { BookIcon, DownloadIcon, TrashIcon } from "@primer/octicons-react";
-import { IconButton, Pagination, RelativeTime } from "@primer/react";
+import { IconButton, Label, RelativeTime } from "@primer/react";
 import { Blankslate, Card, DataTable, Table } from "@primer/react/experimental";
-import React from "react";
 import SkeletonList from "./SkeletonList";
+import {
+  useDeleteDocumentMutation,
+  useDocumentsQuery,
+} from "@/hooks/useDocuments";
+import { type DocumentItem } from "@/types/document.type";
 
-interface FileItem {
-  id: string;
-  status: string;
-  storageFilename: string;
-  userFilename: string;
-  highlight?: string;
-  uploadedAt: string;
-}
-
-const dummyFiles: FileItem[] = [
-  {
-    id: "1",
-    status: "COMPLETED",
-    storageFilename: "123-abc-doc.pdf",
-    userFilename: "Q3_Financial_Report.pdf",
-    highlight:
-      "The company saw an increase in <em>revenue</em> during the third quarter.",
-    uploadedAt: new Date(Date.now() - 1000000).toISOString(),
-  },
-  {
-    id: "2",
-    status: "PROCESSING",
-    storageFilename: "456-def-doc.docx",
-    userFilename: "Project_Proposal_Draft.docx",
-    highlight:
-      "This <em>proposal</em> outlines the new architecture for the doc search.",
-    uploadedAt: new Date(Date.now() - 5000000).toISOString(),
-  },
-  {
-    id: "3",
-    status: "FAILED",
-    storageFilename: "789-ghi-doc.txt",
-    userFilename: "Meeting_Notes.txt",
-    uploadedAt: new Date(Date.now() - 15000000).toISOString(),
-  },
-];
+const stateColorMap: Record<DocumentItem["status"], string> = {
+  pending: "attention",
+  success: "success",
+  error: "danger",
+};
 
 export default function FilesList() {
-  const [currentPage, setCurrentPage] = React.useState(2);
-  const [loading, setLoading] = React.useState(false);
+  const { data, isLoading } = useDocumentsQuery();
+  const { mutate: deleteDocument } = useDeleteDocumentMutation();
 
-  if (loading) {
+  const handleDelete = (id: string) => {
+    deleteDocument(id);
+  };
+
+  if (isLoading) {
     return <SkeletonList />;
   }
 
-  if (!dummyFiles) {
+  if (!data || data.length === 0) {
     return (
       <Card className="mt-5! mx-auto max-w-2xl">
         <Blankslate>
@@ -77,7 +54,7 @@ export default function FilesList() {
         </Table.Title>
         <DataTable
           aria-labelledby="files-list-title"
-          data={dummyFiles}
+          data={data}
           columns={[
             {
               header: "Name",
@@ -104,6 +81,13 @@ export default function FilesList() {
             {
               header: "Status",
               field: "status",
+              renderCell: (row) => {
+                return (
+                  <Label variant={stateColorMap[row.status]} size="large">
+                    {row.status}
+                  </Label>
+                );
+              },
             },
             {
               header: "Added",
@@ -148,7 +132,7 @@ export default function FilesList() {
                       variant="invisible"
                       className="text-red-500!"
                       onClick={() => {
-                        alert(`Fake deleting ${row.userFilename}`);
+                        deleteDocument(row.id);
                       }}
                     />
                   </>
@@ -158,14 +142,6 @@ export default function FilesList() {
           ]}
         />
       </Table.Container>
-      <Pagination
-        pageCount={10}
-        currentPage={currentPage}
-        onPageChange={(_event, number) => {
-          setCurrentPage(number);
-        }}
-        showPages
-      />
     </div>
   );
 }
