@@ -3,7 +3,7 @@ import { Table } from "@primer/react/experimental";
 
 export default function SkeletonList() {
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-5xl pt-3 px-2">
       <Table.Container>
         <Table.Title as="h2" id="documents-loading">
           Documents
@@ -12,26 +12,24 @@ export default function SkeletonList() {
           aria-labelledby="documents-loading"
           rows={10}
           columns={[
+            { width: "auto", header: "Name", id: "name" },
             {
-              header: "Name",
-              id: "name",
+              width: "grow",
+              header: "Hightlight",
+              id: "hightlight",
             },
             {
-              header: "Highlight",
-              id: "highlight",
-            },
-            {
+              width: "auto",
               header: "Status",
               id: "status",
             },
             {
+              width: "auto",
               header: "Added",
               id: "added",
             },
-            {
-              header: "",
-              id: "actions",
-            },
+
+            { width: "auto", header: "", id: "actions" },
           ]}
         />
       </Table.Container>

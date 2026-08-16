@@ -1,12 +1,12 @@
 import { BookIcon, DownloadIcon, TrashIcon } from "@primer/octicons-react";
-import { IconButton, Label, RelativeTime } from "@primer/react";
+import { IconButton, Label, RelativeTime, Text } from "@primer/react";
 import { Blankslate, Card, DataTable, Table } from "@primer/react/experimental";
 import SkeletonList from "./SkeletonList";
-import {
-  useDeleteDocumentMutation,
-  useDocumentsQuery,
-} from "@/hooks/useDocuments";
+import { useDeleteDocumentMutation } from "@/hooks/useDocuments";
+import { useFileUpload } from "@/hooks/useFileUpload";
 import { type DocumentItem } from "@/types/document.type";
+import { downloadDocumentFile } from "@/services/documentService";
+import { toast } from "sonner";
 
 const stateColorMap: Record<DocumentItem["status"], string> = {
   pending: "attention",
@@ -14,19 +14,38 @@ const stateColorMap: Record<DocumentItem["status"], string> = {
   error: "danger",
 };
 
-export default function FilesList() {
-  const { data, isLoading } = useDocumentsQuery();
+interface FilesListProps {
+  documents: DocumentItem[];
+  isLoading: boolean;
+}
+
+export default function FilesList({ documents, isLoading }: FilesListProps) {
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
+  const { openFileDialog, isUploading } = useFileUpload();
 
   const handleDelete = (id: string) => {
     deleteDocument(id);
+  };
+
+  const handleDownload = async (id: string, userFilename: string) => {
+    try {
+      await downloadDocumentFile(id, userFilename);
+      toast.success(`Downloading "${userFilename}"...`);
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to download document";
+      toast.error(message);
+      console.error("Failed to download document", error);
+    }
   };
 
   if (isLoading) {
     return <SkeletonList />;
   }
 
-  if (!data || data.length === 0) {
+  if (!documents || documents.length === 0) {
     return (
       <Card className="mt-5! mx-auto max-w-2xl">
         <Blankslate>
@@ -38,8 +57,11 @@ export default function FilesList() {
             Try adjusting your search query or upload some documents to get
             started.
           </Blankslate.Description>
-          <Blankslate.PrimaryAction onClick={() => alert("click")}>
-            Upload documents
+          <Blankslate.PrimaryAction
+            onClick={openFileDialog}
+            disabled={isUploading}
+          >
+            {isUploading ? "Uploading..." : "Upload documents"}
           </Blankslate.PrimaryAction>
         </Blankslate>
       </Card>
@@ -47,21 +69,23 @@ export default function FilesList() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-5xl pt-3 px-2">
       <Table.Container>
         <Table.Title as="h3" id="files-list-title">
           Documents
         </Table.Title>
         <DataTable
           aria-labelledby="files-list-title"
-          data={data}
+          data={documents}
           columns={[
             {
+              width: "auto",
               header: "Name",
               field: "userFilename",
               rowHeader: true,
             },
             {
+              width: "grow",
               header: "Highlight",
               field: "highlight",
               renderCell: (row) => {
@@ -79,6 +103,7 @@ export default function FilesList() {
               },
             },
             {
+              width: "auto",
               header: "Status",
               field: "status",
               renderCell: (row) => {
@@ -90,6 +115,7 @@ export default function FilesList() {
               },
             },
             {
+              width: "auto",
               header: "Added",
               field: "uploadedAt",
               renderCell: (row) => {
@@ -97,21 +123,9 @@ export default function FilesList() {
               },
             },
             {
+              width: "auto",
               id: "actions",
-              header: () => (
-                <span
-                  style={{
-                    clipPath: "inset(50%)",
-                    height: "1px",
-                    overflow: "hidden",
-                    position: "absolute",
-                    whiteSpace: "nowrap",
-                    width: "1px",
-                  }}
-                >
-                  Actions
-                </span>
-              ),
+              header: () => <></>,
               renderCell: (row) => {
                 return (
                   <>
@@ -122,7 +136,7 @@ export default function FilesList() {
                       variant="invisible"
                       className="text-blue-500!"
                       onClick={() => {
-                        alert(`Fake downloading ${row.userFilename}`);
+                        handleDownload(row.id, row.userFilename);
                       }}
                     />
                     <IconButton
@@ -132,7 +146,7 @@ export default function FilesList() {
                       variant="invisible"
                       className="text-red-500!"
                       onClick={() => {
-                        deleteDocument(row.id);
+                        handleDelete(row.id);
                       }}
                     />
                   </>
