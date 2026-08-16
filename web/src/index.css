@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tailwindcss" utilities;
 
 h1 {
   font-size: 1.5rem;

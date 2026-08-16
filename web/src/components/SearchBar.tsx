@@ -1,5 +1,5 @@
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { SearchIcon } from "@primer/octicons-react";
+import { SearchIcon, UploadIcon } from "@primer/octicons-react";
 import {
   Button,
   CounterLabel,
@@ -31,42 +31,56 @@ export default function SearchBar({
   };
 
   return (
-    <div className="mx-auto flex max-w-6xl items-center justify-around">
-      <TextInput
-        type="search"
-        trailingAction={
-          <IconButton
-            variant="invisible"
-            icon={SearchIcon}
-            aria-label="Search"
-          />
-        }
-        placeholder="Search documents"
-        value={searchText}
-        onChange={handleSearch}
-      />
-      <Button onClick={openFileDialog} disabled={isUploading}>
-        {isUploading ? "Uploading..." : "Upload"}
-      </Button>
-      <Card padding="condensed">
-        <Text className="flex items-center align-center gap-1">
-          Found
-          {isLoading ? (
-            <Spinner className="animate-spin!" size="small" />
-          ) : (
-            <CounterLabel
-              className={`text-white! ${
-                total === 0
-                  ? "bg-(--bgColor-danger-emphasis)!"
-                  : "bg-(--bgColor-success-emphasis)!"
-              }`}
-            >
-              {total}
-            </CounterLabel>
-          )}
-          documents.
-        </Text>
-      </Card>
+    <div className="mx-auto flex max-w-5xl flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="w-full sm:max-w-md sm:flex-1">
+        <TextInput
+          className="w-full!"
+          block
+          monospace
+          type="search"
+          trailingVisual={
+            <IconButton
+              variant="invisible"
+              icon={SearchIcon}
+              aria-label="Search"
+            />
+          }
+          placeholder="Search documents..."
+          value={searchText}
+          onChange={handleSearch}
+        />
+      </div>
+
+      <div className="flex w-full items-center justify-around gap-3 sm:w-auto sm:justify-end">
+        <Button
+          leadingVisual={UploadIcon}
+          loading={isUploading}
+          onClick={openFileDialog}
+          disabled={isUploading}
+        >
+          {isUploading ? "Uploading..." : "Upload"}
+        </Button>
+
+        <Card padding="condensed">
+          <Text className="flex items-center align-center gap-1 text-sm">
+            Found
+            {isLoading ? (
+              <Spinner size="small" />
+            ) : (
+              <CounterLabel
+                className={`text-white! ${
+                  total === 0
+                    ? "bg-(--bgColor-danger-emphasis)!"
+                    : "bg-(--bgColor-success-emphasis)!"
+                }`}
+              >
+                {total}
+              </CounterLabel>
+            )}
+            document{total === 1 ? "" : "s"}
+          </Text>
+        </Card>
+      </div>
     </div>
   );
 }
