@@ -17,6 +17,9 @@ export const poolProvider: Provider = {
       user: configService.get<string>('database.username'),
       password: configService.get<string>('database.password'),
       database: configService.get<string>('database.database'),
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
     });
   },
 };

@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ALTER COLUMN "uploadedAt" SET NOT NULL;

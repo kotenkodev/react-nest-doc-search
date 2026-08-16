@@ -36,6 +36,20 @@
       "when": 1786966588823,
       "tag": "0004_abnormal_penance",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786996070681,
+      "tag": "0005_cute_bromley",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786996617877,
+      "tag": "0006_quick_loa",
+      "breakpoints": true
     }
   ]
 }
