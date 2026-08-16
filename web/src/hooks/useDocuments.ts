@@ -60,9 +60,7 @@ export const useUploadDocumentMutation = () => {
 export const useDeleteDocumentMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => {
-      deleteDocument(id);
-    },
+    mutationFn: (id: string) => deleteDocument(id),
     onSuccess: () => {
       toast.success("Document deleted");
       queryClient.invalidateQueries({ queryKey: ["documents"] });

@@ -1,5 +1,11 @@
 import { BookIcon, DownloadIcon, TrashIcon } from "@primer/octicons-react";
-import { IconButton, Label, RelativeTime, Text } from "@primer/react";
+import {
+  IconButton,
+  Label,
+  type LabelColorOptions,
+  RelativeTime,
+  useConfirm,
+} from "@primer/react";
 import { Blankslate, Card, DataTable, Table } from "@primer/react/experimental";
 import SkeletonList from "./SkeletonList";
 import { useDeleteDocumentMutation } from "@/hooks/useDocuments";
@@ -8,7 +14,7 @@ import { type DocumentItem } from "@/types/document.type";
 import { downloadDocumentFile } from "@/services/documentService";
 import { toast } from "sonner";
 
-const stateColorMap: Record<DocumentItem["status"], string> = {
+const stateColorMap: Record<DocumentItem["status"], LabelColorOptions> = {
   pending: "attention",
   success: "success",
   error: "danger",
@@ -22,9 +28,18 @@ interface FilesListProps {
 export default function FilesList({ documents, isLoading }: FilesListProps) {
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
   const { openFileDialog, isUploading } = useFileUpload();
+  const confirm = useConfirm();
 
-  const handleDelete = (id: string) => {
-    deleteDocument(id);
+  const handleDelete = async (id: string, userFilename: string) => {
+    const isConfirmed = await confirm({
+      title: "Delete document",
+      content: `Are you sure you want to delete "${userFilename}"?`,
+      confirmButtonContent: "Delete",
+      confirmButtonType: "danger",
+    });
+    if (isConfirmed) {
+      deleteDocument(id);
+    }
   };
 
   const handleDownload = async (id: string, userFilename: string) => {
@@ -146,7 +161,7 @@ export default function FilesList({ documents, isLoading }: FilesListProps) {
                       variant="invisible"
                       className="text-red-500!"
                       onClick={() => {
-                        handleDelete(row.id);
+                        handleDelete(row.id, row.userFilename);
                       }}
                     />
                   </>

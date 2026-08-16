@@ -4,7 +4,7 @@ import { getMimeType } from "@/utils/document-parse";
 import axios from "axios";
 import type { GetDocumentsResponse } from "@/types/api-response";
 
-export const getDocuments = async (searchText: string) => {
+export const getDocuments = async (searchText?: string) => {
   const response = await api.get<GetDocumentsResponse>("/documents", {
     params: searchText ? { searchText } : undefined,
   });
