@@ -28,6 +28,16 @@ export class DocumentsRepository {
     return document;
   }
 
+  async getDocumentByStorageFilename(
+    storageFilename: string,
+  ): Promise<Document> {
+    const [document] = await this.db
+      .select()
+      .from(documentsTable)
+      .where(eq(documentsTable.storageFilename, storageFilename));
+    return document;
+  }
+
   async create(data: NewDocument): Promise<Document> {
     const [document] = await this.db
       .insert(documentsTable)
@@ -36,10 +46,14 @@ export class DocumentsRepository {
     return document;
   }
 
-  async setStatus(id: string, status: DocumentStatus): Promise<Document> {
+  async setStatus(
+    id: string,
+    status: DocumentStatus,
+    error: string | null = null,
+  ): Promise<Document> {
     const [document] = await this.db
       .update(documentsTable)
-      .set({ status })
+      .set({ status, error })
       .where(eq(documentsTable.id, id))
       .returning();
     return document;

@@ -90,8 +90,12 @@ export class DocumentsService {
     };
   }
 
-  async setStatus(id: string, status: DocumentStatus): Promise<Document> {
-    const updatedDocument = await this.repository.setStatus(id, status);
+  async setStatus(
+    id: string,
+    status: DocumentStatus,
+    error: string | null = null,
+  ): Promise<Document> {
+    const updatedDocument = await this.repository.setStatus(id, status, error);
 
     return updatedDocument;
   }

@@ -16,6 +16,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { GlobalExceptionFilter } from './shared/filters/http-exception.filter';
 import { ParserModule } from './modules/parser/parser.module';
 import { LoggingMiddleware } from './shared/middleware/logging.middleware';
+import { SqsModule } from './modules/sqs/sqs.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { LoggingMiddleware } from './shared/middleware/logging.middleware';
     SseModule,
     SqsWorkerModule,
     ParserModule,
+    SqsModule,
   ],
   controllers: [AppController],
   providers: [

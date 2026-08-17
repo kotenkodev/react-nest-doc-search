@@ -12,7 +12,7 @@ import {
   ALLOWED_DOCUMENT_MIME_TYPES,
   MAX_DOCUMENT_SIZE,
   type AllowedDocumentMimeType,
-} from 'src/common/constant';
+} from '../../../common/constant';
 
 export class CreateDocumentDto {
   @IsString()
