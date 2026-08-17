@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SearchService } from './search.service';
-import { openSearchClientProvider } from './opensearch.provider';
+import { openSearchClientProvider } from './search.provider';
 
 @Module({
   providers: [SearchService, openSearchClientProvider],

@@ -1,10 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { OPENSEARCH_CLIENT } from './opensearch.provider';
+import { OPENSEARCH_CLIENT } from './search.provider';
 import { Client } from '@opensearch-project/opensearch';
 
 @Injectable()
 export class SearchService {
   constructor(@Inject(OPENSEARCH_CLIENT) private readonly client: Client) {}
+
+  async indexExists(index: string): Promise<boolean> {
+    const response = await this.client.indices.exists({ index });
+    return Boolean(response.body);
+  }
+
+  async createIndexIfNotExists(
+    index: string,
+    body?: Record<string, any>,
+  ): Promise<void> {
+    const exists = await this.indexExists(index);
+    if (!exists) {
+      await this.client.indices.create({
+        index,
+        body,
+      });
+    }
+  }
 
   async index<T extends Record<string, any>>(
     index: string,
