@@ -1,33 +1,30 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { S3_BUCKET, S3_CLIENT } from './storage.contants';
+import { Readable } from 'stream';
+import { createWriteStream } from 'fs';
+import { unlink } from 'fs/promises';
+import { pipeline } from 'stream/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { randomUUID } from 'crypto';
 
 const UPLOAD_TTL_SECONDS = 300;
 const DOWNLOAD_TTL_SECONDS = 3600;
 
 @Injectable()
 export class StorageService {
-  private readonly client: S3Client;
-  private readonly bucketName: string;
-
-  constructor(private readonly configService: ConfigService) {
-    this.client = new S3Client({
-      region: configService.getOrThrow<string>('AWS_REGION'),
-      credentials: {
-        accessKeyId: configService.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: configService.getOrThrow<string>(
-          'AWS_SECRET_ACCESS_KEY',
-        ),
-      },
-    });
-    this.bucketName = configService.getOrThrow<string>('AWS_BUCKET_NAME');
-  }
+  constructor(
+    @Inject(S3_CLIENT) private readonly client: S3Client,
+    @Inject(S3_BUCKET) private readonly bucketName: string,
+  ) {}
 
   async getPresignedPostUrl(key: string, mimeType: string, size: number) {
     const command = new PutObjectCommand({
@@ -55,6 +52,50 @@ export class StorageService {
     });
   }
 
+  async getObjectMetadata(
+    key: string,
+  ): Promise<{ size?: number; mimeType?: string }> {
+    const command = new HeadObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    const response = await this.client.send(command);
+    return {
+      size: response.ContentLength,
+      mimeType: response.ContentType,
+    };
+  }
+
+  async getObjectStream(key: string): Promise<Readable> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    const response = await this.client.send(command);
+    return response.Body as Readable;
+  }
+
+  async downloadToTempFile(key: string): Promise<string> {
+    const stream = await this.getObjectStream(key);
+    const tempFilePath = join(tmpdir(), `doc-${randomUUID()}.tmp`);
+    await pipeline(stream, createWriteStream(tempFilePath));
+    return tempFilePath;
+  }
+
+  async withTempFile<T>(
+    key: string,
+    callback: (filePath: string) => Promise<T>,
+  ): Promise<T> {
+    const tempPath = await this.downloadToTempFile(key);
+    try {
+      return await callback(tempPath);
+    } finally {
+      await unlink(tempPath).catch(() => {});
+    }
+  }
+
   async deleteObject(key: string) {
     const command = new DeleteObjectCommand({
       Bucket: this.bucketName,
@@ -64,3 +105,4 @@ export class StorageService {
     await this.client.send(command);
   }
 }
+
