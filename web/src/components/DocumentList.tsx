@@ -1,10 +1,13 @@
 import { BookIcon, DownloadIcon, TrashIcon } from "@primer/octicons-react";
 import {
+  Details,
   IconButton,
   Label,
   type LabelColorOptions,
   RelativeTime,
+  Text,
   useConfirm,
+  useDetails,
 } from "@primer/react";
 import { Blankslate, Card, DataTable, Table } from "@primer/react/experimental";
 import SkeletonList from "./SkeletonList";
@@ -29,6 +32,7 @@ export default function FilesList({ documents, isLoading }: FilesListProps) {
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
   const { openFileDialog, isUploading } = useFileUpload();
   const confirm = useConfirm();
+  const { getDetailsProps } = useDetails({ closeOnOutsideClick: true });
 
   const handleDelete = async (id: string, userFilename: string) => {
     const isConfirmed = await confirm({
@@ -123,9 +127,16 @@ export default function FilesList({ documents, isLoading }: FilesListProps) {
               field: "status",
               renderCell: (row) => {
                 return (
-                  <Label variant={stateColorMap[row.status]} size="large">
-                    {row.status}
-                  </Label>
+                  <Details {...getDetailsProps()}>
+                    <Label
+                      as="summary"
+                      variant={stateColorMap[row.status]}
+                      size="large"
+                    >
+                      {row.status}
+                    </Label>
+                    <Text>{row.error || "No error"}</Text>
+                  </Details>
                 );
               },
             },
