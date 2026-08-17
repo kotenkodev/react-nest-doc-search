@@ -3,4 +3,3 @@ export interface FileParser {
   extractContent(buffer: Buffer): Promise<string>;
   extractFromFile(filePath: string): Promise<string>;
 }
-

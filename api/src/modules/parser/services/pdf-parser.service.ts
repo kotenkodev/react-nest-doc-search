@@ -32,4 +32,3 @@ export class PdfParserService implements FileParser {
     }
   }
 }
-

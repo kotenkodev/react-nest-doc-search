@@ -105,4 +105,3 @@ export class StorageService {
     await this.client.send(command);
   }
 }
-
