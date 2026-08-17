@@ -38,4 +38,20 @@ export class DocumentParserService {
 
     return { text };
   }
+
+  async parseDocumentFromFile(
+    filePath: string,
+    mimeType: string,
+  ): Promise<{ text: string; pageCount?: number }> {
+    const parser = this.parsers.find((p) => p.supports(mimeType));
+
+    if (!parser) {
+      throw new Error(`Unsupported mime type: ${mimeType}`);
+    }
+
+    const text = await parser.extractFromFile(filePath);
+
+    return { text };
+  }
 }
+

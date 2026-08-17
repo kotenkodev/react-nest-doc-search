@@ -20,4 +20,15 @@ export class WordParserService implements FileParser {
       throw new Error(`Failed to parse Word document: ${message}`);
     }
   }
+
+  async extractFromFile(filePath: string): Promise<string> {
+    try {
+      const data = await mammoth.extractRawText({ path: filePath });
+      return data.value;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to parse Word document: ${message}`);
+    }
+  }
 }
+
