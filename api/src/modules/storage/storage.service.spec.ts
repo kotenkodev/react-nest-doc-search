@@ -52,9 +52,7 @@ describe('StorageService', () => {
         'users/test@example.com/doc.pdf',
       );
 
-      expect(s3Client.send).toHaveBeenCalledWith(
-        expect.any(HeadObjectCommand),
-      );
+      expect(s3Client.send).toHaveBeenCalledWith(expect.any(HeadObjectCommand));
       expect(metadata).toEqual({
         size: 2048,
         mimeType: 'application/pdf',
@@ -91,7 +89,6 @@ describe('StorageService', () => {
 
       expect(tempPath).toContain('.tmp');
 
-      // Cleanup created temp file
       await unlink(tempPath).catch(() => {});
     });
   });

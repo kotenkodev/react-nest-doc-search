@@ -5,13 +5,29 @@ import { DocumentsRepository } from '../documents/document.repository';
 import { DocumentParserService } from '../parser/document-parser.service';
 import { StorageService } from '../storage/storage.service';
 import { DocumentSearchService } from '../documents/services/document-search.service';
+import { Message } from '@aws-sdk/client-sqs';
 
 describe('SqsWorkerService', () => {
   let service: SqsWorkerService;
+  let sqsService: jest.Mocked<SqsService>;
   let documentRepository: jest.Mocked<DocumentsRepository>;
   let documentParserService: jest.Mocked<DocumentParserService>;
   let documentSearchService: jest.Mocked<DocumentSearchService>;
   let storageService: jest.Mocked<StorageService>;
+
+  const mockDocId = 'doc-123';
+  const mockStorageFilename = 'users/user@example.com/doc-123-doc.pdf';
+  const mockDocument = {
+    id: mockDocId,
+    ownerEmail: 'user@example.com',
+    mimeType: 'application/pdf',
+    size: 1024,
+    status: 'pending' as const,
+    error: null,
+    storageFilename: mockStorageFilename,
+    userFilename: 'doc.pdf',
+    uploadedAt: new Date(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,14 +43,13 @@ describe('SqsWorkerService', () => {
         {
           provide: DocumentsRepository,
           useValue: {
-            getDocumentById: jest.fn(),
+            getDocumentByStorageFilename: jest.fn(),
             setStatus: jest.fn(),
           },
         },
         {
           provide: DocumentParserService,
           useValue: {
-            parseDocument: jest.fn(),
             parseDocumentFromFile: jest.fn(),
           },
         },
@@ -42,14 +57,11 @@ describe('SqsWorkerService', () => {
           provide: DocumentSearchService,
           useValue: {
             index: jest.fn(),
-            search: jest.fn(),
-            delete: jest.fn(),
           },
         },
         {
           provide: StorageService,
           useValue: {
-            getDownloadUrl: jest.fn(),
             getObjectMetadata: jest.fn(),
             withTempFile: jest.fn(
               async (
@@ -63,6 +75,7 @@ describe('SqsWorkerService', () => {
     }).compile();
 
     service = module.get<SqsWorkerService>(SqsWorkerService);
+    sqsService = module.get(SqsService);
     documentRepository = module.get(DocumentsRepository);
     documentParserService = module.get(DocumentParserService);
     documentSearchService = module.get(DocumentSearchService);
@@ -73,22 +86,101 @@ describe('SqsWorkerService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('processDocumentMessage', () => {
-    const mockDocId = 'doc-123';
-    const mockDocument = {
-      id: mockDocId,
-      ownerEmail: 'user@example.com',
-      mimeType: 'application/pdf',
-      size: 1024,
-      status: 'pending' as const,
-      error: null,
-      storageFilename: 'storage/doc.pdf',
-      userFilename: 'doc.pdf',
-      uploadedAt: new Date(),
-    };
+  describe('processIncomingMessages', () => {
+    it('should do nothing if no messages are received', async () => {
+      sqsService.receive.mockResolvedValue([]);
 
-    it('should successfully stream to temp file, parse, index document and update status to success', async () => {
-      documentRepository.getDocumentById.mockResolvedValue(mockDocument);
+      await service.processIncomingMessages();
+
+      expect(sqsService.delete).not.toHaveBeenCalled();
+    });
+
+    it('should decode URL-encoded S3 key, process document and delete message', async () => {
+      const s3EventPayload = {
+        Records: [
+          {
+            eventName: 'ObjectCreated:Put',
+            s3: {
+              bucket: { name: 'test-bucket' },
+              object: {
+                key: 'users/user%40example.com/doc-123-doc.pdf',
+                size: 1024,
+              },
+            },
+          },
+        ],
+      };
+
+      const mockMessage: Message = {
+        MessageId: 'msg-1',
+        ReceiptHandle: 'receipt-1',
+        Body: JSON.stringify(s3EventPayload),
+      };
+
+      sqsService.receive.mockResolvedValue([mockMessage]);
+      documentRepository.getDocumentByStorageFilename.mockResolvedValue(
+        mockDocument,
+      );
+      storageService.getObjectMetadata.mockResolvedValue({
+        size: 1024,
+        mimeType: 'application/pdf',
+      });
+      documentParserService.parseDocumentFromFile.mockResolvedValue({
+        text: 'parsed text',
+      });
+      documentSearchService.index.mockResolvedValue();
+      documentRepository.setStatus.mockResolvedValue({
+        ...mockDocument,
+        status: 'success',
+      });
+
+      await service.processIncomingMessages();
+
+      expect(
+        documentRepository.getDocumentByStorageFilename,
+      ).toHaveBeenCalledWith('users/user@example.com/doc-123-doc.pdf');
+      expect(documentSearchService.index).toHaveBeenCalledWith(
+        mockDocument,
+        'parsed text',
+      );
+      expect(sqsService.delete).toHaveBeenCalledWith(mockMessage);
+    });
+
+    it('should ignore non ObjectCreated events', async () => {
+      const s3EventPayload = {
+        Records: [
+          {
+            eventName: 'ObjectRemoved:Delete',
+            s3: {
+              bucket: { name: 'test-bucket' },
+              object: { key: 'some-key', size: 100 },
+            },
+          },
+        ],
+      };
+
+      const mockMessage: Message = {
+        MessageId: 'msg-1',
+        ReceiptHandle: 'receipt-1',
+        Body: JSON.stringify(s3EventPayload),
+      };
+
+      sqsService.receive.mockResolvedValue([mockMessage]);
+
+      await service.processIncomingMessages();
+
+      expect(
+        documentRepository.getDocumentByStorageFilename,
+      ).not.toHaveBeenCalled();
+      expect(sqsService.delete).toHaveBeenCalledWith(mockMessage);
+    });
+  });
+
+  describe('processDocumentByStorageFilename', () => {
+    it('should successfully parse, index document and update status to success', async () => {
+      documentRepository.getDocumentByStorageFilename.mockResolvedValue(
+        mockDocument,
+      );
       storageService.getObjectMetadata.mockResolvedValue({
         size: 1024,
         mimeType: 'application/pdf',
@@ -102,11 +194,11 @@ describe('SqsWorkerService', () => {
         status: 'success',
       });
 
-      await service.processDocumentMessage(mockDocId);
+      await service.processDocumentByStorageFilename(mockStorageFilename);
 
-      expect(documentRepository.getDocumentById).toHaveBeenCalledWith(
-        mockDocId,
-      );
+      expect(
+        documentRepository.getDocumentByStorageFilename,
+      ).toHaveBeenCalledWith(mockStorageFilename);
       expect(storageService.getObjectMetadata).toHaveBeenCalledWith(
         mockDocument.storageFilename,
       );
@@ -114,9 +206,10 @@ describe('SqsWorkerService', () => {
         mockDocument.storageFilename,
         expect.any(Function),
       );
-      expect(
-        documentParserService.parseDocumentFromFile,
-      ).toHaveBeenCalledWith('/tmp/fake-temp.tmp', mockDocument.mimeType);
+      expect(documentParserService.parseDocumentFromFile).toHaveBeenCalledWith(
+        '/tmp/fake-temp.tmp',
+        mockDocument.mimeType,
+      );
       expect(documentSearchService.index).toHaveBeenCalledWith(
         mockDocument,
         'parsed text content',
@@ -128,14 +221,30 @@ describe('SqsWorkerService', () => {
       );
     });
 
+    it('should skip processing if document is already success', async () => {
+      documentRepository.getDocumentByStorageFilename.mockResolvedValue({
+        ...mockDocument,
+        status: 'success',
+      });
+
+      await service.processDocumentByStorageFilename(mockStorageFilename);
+
+      expect(storageService.getObjectMetadata).not.toHaveBeenCalled();
+      expect(documentRepository.setStatus).not.toHaveBeenCalled();
+    });
+
     it('should set status to error if file size does not match database record', async () => {
-      documentRepository.getDocumentById.mockResolvedValue(mockDocument);
+      documentRepository.getDocumentByStorageFilename.mockResolvedValue(
+        mockDocument,
+      );
       storageService.getObjectMetadata.mockResolvedValue({
         size: 99999,
         mimeType: 'application/pdf',
       });
 
-      await service.processDocumentMessage(mockDocId);
+      await expect(
+        service.processDocumentByStorageFilename(mockStorageFilename),
+      ).rejects.toThrow('Document size mismatch: expected 1024, got 99999');
 
       expect(documentRepository.setStatus).toHaveBeenCalledWith(
         mockDocId,
@@ -146,13 +255,19 @@ describe('SqsWorkerService', () => {
     });
 
     it('should set status to error if mime type does not match database record', async () => {
-      documentRepository.getDocumentById.mockResolvedValue(mockDocument);
+      documentRepository.getDocumentByStorageFilename.mockResolvedValue(
+        mockDocument,
+      );
       storageService.getObjectMetadata.mockResolvedValue({
         size: 1024,
         mimeType: 'image/png',
       });
 
-      await service.processDocumentMessage(mockDocId);
+      await expect(
+        service.processDocumentByStorageFilename(mockStorageFilename),
+      ).rejects.toThrow(
+        'Document mimeType mismatch: expected application/pdf, got image/png',
+      );
 
       expect(documentRepository.setStatus).toHaveBeenCalledWith(
         mockDocId,
@@ -161,20 +276,5 @@ describe('SqsWorkerService', () => {
       );
       expect(storageService.withTempFile).not.toHaveBeenCalled();
     });
-
-    it('should set status to error if processing fails', async () => {
-      documentRepository.getDocumentById.mockRejectedValue(
-        new Error('DB failure'),
-      );
-
-      await service.processDocumentMessage(mockDocId);
-
-      expect(documentRepository.setStatus).toHaveBeenCalledWith(
-        mockDocId,
-        'error',
-        'DB failure',
-      );
-    });
   });
 });
-
