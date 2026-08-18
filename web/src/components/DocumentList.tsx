@@ -26,9 +26,14 @@ const stateColorMap: Record<DocumentItem["status"], LabelColorOptions> = {
 interface FilesListProps {
   documents: DocumentItem[];
   isLoading: boolean;
+  searchText?: string;
 }
 
-export default function FilesList({ documents, isLoading }: FilesListProps) {
+export default function FilesList({
+  documents,
+  isLoading,
+  searchText,
+}: FilesListProps) {
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
   const { openFileDialog, isUploading } = useFileUpload();
   const confirm = useConfirm();
@@ -115,7 +120,7 @@ export default function FilesList({ documents, isLoading }: FilesListProps) {
                 }
                 return (
                   <div
-                    className="text-sm max-w-md truncate [&>em]:bg-yellow-200 [&>em]:text-black [&>em]:not-italic [&>em]:font-bold"
+                    className="text-sm max-w-lg line-clamp-2 [&>em]:bg-yellow-200 [&>em]:text-black [&>em]:not-italic [&>em]:font-bold [&>em]:px-0.5 [&>em]:py-0.2 [&>em]:rounded-xs"
                     dangerouslySetInnerHTML={{ __html: row.highlight }}
                   />
                 );
