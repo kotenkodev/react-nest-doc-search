@@ -68,13 +68,15 @@ sequenceDiagram
 - **State & Data Fetching**: [@tanstack/react-query](https://tanstack.com/query/latest), [Zustand](https://zustand-demo.pmnd.rs/)
 - **Notifications**: [Sonner](https://sonner.emilkowal.ski/) with custom upload/processing progress toasts
 
-### Infrastructure (`/infra`)
+### Infrastructure & Hosting
 
-- **AWS CloudFormation**:
+- **AWS CloudFormation (`/infra`)**:
   - S3 Bucket for document storage (`users/{userEmail}/{uuid}-{filename}`)
-  - S3 Bucket for static frontend web hosting
   - SQS Queue (`doc-processing-queue`) with Redrive Policy (`maxReceiveCount: 3`)
   - SQS Dead-Letter Queue (`doc-dlq`) for unhandled/fatal message retention (14-day retention)
+  - EC2 instance for Docker-hosted NestJS API & PostgreSQL
+  - Managed OpenSearch domain for full-text search
+- **Frontend Hosting**: [Vercel](https://vercel.com/) with SPA rewrite rules (`vercel.json`)
 - **Local Development**: Docker Compose for PostgreSQL, OpenSearch, and OpenSearch Dashboards
 
 ---

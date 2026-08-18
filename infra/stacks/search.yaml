@@ -21,13 +21,19 @@ Resources:
         EBSEnabled: true
         VolumeSize: 10
         VolumeType: gp3
-      NodeToNodeEncryptionOptions:
-        Enabled: true
       EncryptionAtRestOptions:
         Enabled: true
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: Policy-Min-TLS-1-2-2019-07
+      AccessPolicies:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "es:*"
+            Resource: !Sub "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/doc-search-${Environment}/*"
 
 Outputs:
   DomainEndpoint:

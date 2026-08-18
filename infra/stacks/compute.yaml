@@ -16,9 +16,29 @@ Parameters:
     Type: String
     Description: Optional EC2 KeyPair name for SSH access
     Default: ""
+  AmiId:
+    Type: String
+    Description: Optional explicit AMI ID override
+    Default: ""
+
+Mappings:
+  RegionToAmi:
+    us-east-1:
+      AmiId: "ami-0db1c5c6dc64eb019"
+    us-east-2:
+      AmiId: "ami-0b4624d29a0750ede"
+    us-west-1:
+      AmiId: "ami-006bd1cead10a7657"
+    us-west-2:
+      AmiId: "ami-00448a081839b6149"
+    eu-central-1:
+      AmiId: "ami-09024b009ae9e7adc"
+    eu-west-1:
+      AmiId: "ami-0e12a41a4a589cf8b"
 
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
+  HasAmiId: !Not [!Equals [!Ref AmiId, ""]]
 
 Resources:
   EC2Role:
@@ -83,7 +103,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceType
-      ImageId: ami-0c101bfb11491b10a
+      ImageId: !If [HasAmiId, !Ref AmiId, !FindInMap [RegionToAmi, !Ref "AWS::Region", AmiId]]
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref "AWS::NoValue"]
       IamInstanceProfile: !Ref EC2InstanceProfile
       SecurityGroupIds:

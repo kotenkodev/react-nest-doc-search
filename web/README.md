@@ -85,3 +85,14 @@ The app will be available at [http://localhost:5173](http://localhost:5173).
 | `npm run build` | Type-check with TypeScript and build the production bundle in `dist/` |
 | `npm run preview` | Locally preview the production build output |
 | `npm run lint` | Run ESLint across the project |
+
+---
+
+## Deployment to Vercel
+
+1. Import the repository in [Vercel](https://vercel.com).
+2. Set **Root Directory** to `web`.
+3. Framework Preset: **Vite**.
+4. Configure the Environment Variable:
+   - `VITE_API_URL`: `http://<EC2_PUBLIC_IP>:3000` (or your backend domain)
+5. Deploy! The included [`vercel.json`](./vercel.json) handles client-side routing so refreshing pages works seamlessly without 404 errors.

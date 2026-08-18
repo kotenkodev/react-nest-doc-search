@@ -54,6 +54,6 @@ jobs:
 
           aws cloudformation deploy \
             --template-file infra/packaged-master.yaml \
-            --stack-name doc-search-production-stack \
+            --stack-name doc-search-stack \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --parameter-overrides Environment=production KeyName="${{ vars.KEY_NAME || '' }}"

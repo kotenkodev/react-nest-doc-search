@@ -38,10 +38,6 @@ Resources:
 Outputs:
   DocumentBucketName:
     Value: !GetAtt StorageStack.Outputs.DocumentBucketName
-  ReactWebBucketName:
-    Value: !GetAtt StorageStack.Outputs.WebBucketName
-  ReactWebWebsiteURL:
-    Value: !GetAtt StorageStack.Outputs.WebBucketWebsiteURL
   DocQueueUrl:
     Value: !GetAtt StorageStack.Outputs.DocQueueUrl
   OpenSearchEndpoint:

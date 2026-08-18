@@ -1,4 +1,4 @@
-name: Deploy React to S3
+name: Deploy Frontend to Vercel
 
 on:
   push:
@@ -6,12 +6,15 @@ on:
     paths:
       - "web/**"
       - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy-vercel:
+    name: Build & Deploy to Vercel
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -20,21 +23,17 @@ jobs:
           cache: "npm"
           cache-dependency-path: web/package-lock.json
 
-      - name: Install & Build React App
+      - name: Install Dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Deploy to Vercel Production
         working-directory: web
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL || 'http://localhost:3000' }}
         run: |
-          npm ci
-          npm run build
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
-
-      - name: Deploy to S3 Web Hosting Bucket
-        run: |
-          aws s3 sync web/dist s3://${{ secrets.REACT_WEB_S3_BUCKET || vars.REACT_WEB_S3_BUCKET }} --delete
+          npx --yes vercel --prod --yes \
+            --token="$VERCEL_TOKEN" \
+            --build-env VITE_API_URL="$VITE_API_URL" \
+            --env VITE_API_URL="$VITE_API_URL"

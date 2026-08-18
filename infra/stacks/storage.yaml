@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Storage Stack - Document S3 Bucket (1-day Tmp Lifecycle), React Web Hosting S3 Bucket, SQS Queue & DLQ"
+Description: "Storage Stack - Document S3 Bucket (1-day Tmp Lifecycle), SQS Queue & DLQ"
 
 Parameters:
   Environment:
@@ -39,7 +39,7 @@ Resources:
             Action: "sqs:SendMessage"
             Resource: !GetAtt DocQueue.Arn
             Condition:
-              ArnEquals:
+              ArnLike:
                 aws:SourceArn: !Sub "arn:aws:s3:::doc-search-storage-${Environment}-${AWS::AccountId}"
 
   # S3 Bucket for Document Storage (Uploads & Processing)
@@ -65,37 +65,6 @@ Resources:
           - Event: "s3:ObjectCreated:*"
             Queue: !GetAtt DocQueue.Arn
 
-  # S3 Bucket for React Frontend Static Web Hosting
-  WebBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "react-web-hosting-${Environment}-${AWS::AccountId}"
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: index.html
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders: ["*"]
-            AllowedMethods: [GET, HEAD]
-            AllowedOrigins: ["*"]
-
-  WebBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref WebBucket
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal: "*"
-            Action: "s3:GetObject"
-            Resource: !Sub "${WebBucket.Arn}/*"
-
 Outputs:
   DocumentBucketName:
     Value: !Ref DocumentBucket
@@ -105,14 +74,6 @@ Outputs:
     Value: !GetAtt DocumentBucket.Arn
     Export:
       Name: !Sub "${AWS::StackName}-DocumentBucketArn"
-  WebBucketName:
-    Value: !Ref WebBucket
-    Export:
-      Name: !Sub "${AWS::StackName}-WebBucketName"
-  WebBucketWebsiteURL:
-    Value: !GetAtt WebBucket.WebsiteURL
-    Export:
-      Name: !Sub "${AWS::StackName}-WebBucketWebsiteURL"
   DocQueueUrl:
     Value: !Ref DocQueue
     Export:
