@@ -10,26 +10,6 @@ import { Document, DocumentStatus } from '../database/schema';
 import { randomUUID } from 'crypto';
 import { DocumentSearchService } from './services/document-search.service';
 
-function highlightExactSubstring(text: string, searchText: string): string {
-  if (!text || !searchText) return text;
-  const terms = searchText
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-
-  if (terms.length === 0) return text;
-
-  const termRegex = new RegExp(`(${terms.join('|')})`, 'gi');
-
-  return text.replace(/<em>(.*?)<\/em>/gi, (match, innerText) => {
-    if (termRegex.test(innerText)) {
-      return innerText.replace(termRegex, '<em>$1</em>');
-    }
-    return `<em>${innerText}</em>`;
-  });
-}
-
 export type DocumentWithHighlight = Document & {
   highlight?: string;
 };
@@ -70,11 +50,7 @@ export class DocumentsService {
         const doc = documentMap.get(hit.id);
         if (!doc) continue;
 
-        const rawHighlight = hit._highlight?.content?.join(' ... ');
-
-        const highlight = rawHighlight
-          ? highlightExactSubstring(rawHighlight, trimmedSearch)
-          : undefined;
+        const highlight = hit._highlight?.content?.join(' ... ');
 
         documentsWithHighlights.push({
           ...doc,

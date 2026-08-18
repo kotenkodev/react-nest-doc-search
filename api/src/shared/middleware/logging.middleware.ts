@@ -7,7 +7,7 @@ export class LoggingMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction): void {
     const { method, originalUrl, ip } = req;
-    const userEmail = req.headers['x-user-email'] || 'anonymous';
+    const userEmail = (req.headers['x-user-email'] as string) || 'anonymous';
     const startTime = Date.now();
 
     res.on('finish', () => {

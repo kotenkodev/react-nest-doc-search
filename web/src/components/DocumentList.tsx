@@ -57,11 +57,11 @@ export default function FilesList({
     try {
       await downloadDocumentFile(id, userFilename);
       toast.success(`Downloading "${userFilename}"...`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to download document";
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ||
+        (error instanceof Error ? error.message : "Failed to download document");
       toast.error(message);
       console.error("Failed to download document", error);
     }

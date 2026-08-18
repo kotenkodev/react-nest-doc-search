@@ -18,9 +18,7 @@ services:
       - app-network
 
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
+    image: ${API_IMAGE:-ghcr.io/kotenkodev/doc-search-api:latest}
     container_name: doc-search-api
     restart: always
     ports:

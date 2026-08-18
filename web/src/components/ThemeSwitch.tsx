@@ -1,25 +1,8 @@
 import { Button, ButtonGroup, useTheme } from "@primer/react";
 import { SunIcon, MoonIcon } from "@primer/octicons-react";
-import { useEffect, useState } from "react";
 
 export default function ThemeSwitch() {
-  const [mounted, setMounted] = useState(false);
   const { resolvedColorMode, setColorMode } = useTheme();
-
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) {
-    return (
-      <ButtonGroup>
-        <Button variant="invisible" aria-label="Light theme">
-          <SunIcon />
-        </Button>
-        <Button variant="invisible" aria-label="Dark theme">
-          <MoonIcon />
-        </Button>
-      </ButtonGroup>
-    );
-  }
 
   return (
     <ButtonGroup>

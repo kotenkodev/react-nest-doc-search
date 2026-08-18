@@ -20,10 +20,7 @@ export class DocumentsRepository {
       .where(eq(documentsTable.ownerEmail, email));
   }
 
-  async getDocumentsByIds(
-    ids: string[],
-    email: string,
-  ): Promise<Document[]> {
+  async getDocumentsByIds(ids: string[], email: string): Promise<Document[]> {
     if (!ids.length) return [];
     return await this.db
       .select()

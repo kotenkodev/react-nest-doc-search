@@ -25,12 +25,9 @@ export class SseService {
       filter(
         (event) => event.ownerEmail.toLowerCase() === userEmail.toLowerCase(),
       ),
-      map(
-        (event) =>
-          ({
-            data: event,
-          }) as MessageEvent,
-      ),
+      map((event) => ({
+        data: event,
+      })),
     );
   }
 }

@@ -11,7 +11,7 @@ export interface DocumentSsePayload {
     userFilename?: string;
     status?: "pending" | "success" | "error";
     error?: string | null;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

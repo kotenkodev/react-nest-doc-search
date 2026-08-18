@@ -1,5 +1,9 @@
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { SearchIcon, UploadIcon, XCircleFillIcon } from "@primer/octicons-react";
+import {
+  SearchIcon,
+  UploadIcon,
+  XCircleFillIcon,
+} from "@primer/octicons-react";
 import {
   Button,
   CounterLabel,

@@ -147,7 +147,7 @@ describe('DocumentsService', () => {
         documents: [
           {
             ...mockDocument,
-            highlight: 'using <em>Post</em>gres database',
+            highlight: 'using <em>Postgres</em> database',
           },
         ],
         total: 1,

@@ -6,7 +6,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-
 import { documentToast } from "@/utils/toast";
 
 export const useDocumentsQuery = (searchText?: string) => {
@@ -33,7 +32,8 @@ export const useUploadDocumentMutation = () => {
 
       const isAllowedExt = /\.(pdf|docx)$/i.test(file.name);
       if (!isAllowedExt) {
-        const errorMsg = "Invalid file type. Only .pdf and .docx files are allowed";
+        const errorMsg =
+          "Invalid file type. Only .pdf and .docx files are allowed";
         documentToast.error(file.name, errorMsg, toastId);
         throw new Error(errorMsg);
       }
@@ -52,9 +52,11 @@ export const useUploadDocumentMutation = () => {
 
         documentToast.success(file.name, "Successfully uploaded.", toastId);
         return newDoc;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const message =
-          error.response?.data?.message || error.message || "Upload failed";
+          (error as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ||
+          (error instanceof Error ? error.message : "Upload failed");
         documentToast.error(file.name, message, toastId);
         throw error;
       }
@@ -80,8 +82,12 @@ export const useDeleteDocumentMutation = () => {
       toast.success("Document deleted");
       queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete document");
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ||
+        (error instanceof Error ? error.message : "Failed to delete document");
+      toast.error(message);
     },
   });
 };

@@ -4,6 +4,9 @@ import { SearchService } from '../../search/search.service';
 import { SearchDocument } from '../types/search-document.type';
 import { DocumentHit } from '../types/document-hit.type';
 
+export const HIGHLIGHT_PRE_TAG = '<em>';
+export const HIGHLIGHT_POST_TAG = '</em>';
+
 @Injectable()
 export class DocumentSearchService implements OnModuleInit {
   private readonly logger = new Logger(DocumentSearchService.name);
@@ -82,7 +85,7 @@ export class DocumentSearchService implements OnModuleInit {
                     {
                       query_string: {
                         query: wildcardQuery,
-                        fields: ['content'],
+                        fields: ['content', 'userFilename'],
                         analyze_wildcard: true,
                         default_operator: 'AND',
                         boost: 3,
@@ -91,7 +94,7 @@ export class DocumentSearchService implements OnModuleInit {
                     {
                       multi_match: {
                         query: trimmedQuery,
-                        fields: ['content'],
+                        fields: ['content', 'userFilename'],
                         type: 'phrase_prefix',
                         boost: 2,
                       },
@@ -99,7 +102,7 @@ export class DocumentSearchService implements OnModuleInit {
                     {
                       multi_match: {
                         query: trimmedQuery,
-                        fields: ['content'],
+                        fields: ['content', 'userFilename'],
                         fuzziness: 'AUTO',
                         prefix_length: 1,
                       },
@@ -123,10 +126,15 @@ export class DocumentSearchService implements OnModuleInit {
           },
         },
         highlight: {
+          pre_tags: [HIGHLIGHT_PRE_TAG],
+          post_tags: [HIGHLIGHT_POST_TAG],
           fields: {
             content: {
-              fragment_size: 150,
+              fragment_size: 160,
               number_of_fragments: 3,
+            },
+            userFilename: {
+              number_of_fragments: 0,
             },
           },
         },

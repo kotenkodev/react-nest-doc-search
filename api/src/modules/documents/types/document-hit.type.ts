@@ -8,5 +8,6 @@ export type DocumentHit = {
   _score: number;
   _highlight?: {
     content?: string[];
+    userFilename?: string[];
   };
 };

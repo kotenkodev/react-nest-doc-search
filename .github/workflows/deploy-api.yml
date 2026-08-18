@@ -9,9 +9,13 @@ on:
       - ".github/workflows/deploy-api.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
-    name: Run Tests
+    name: Run Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -30,9 +34,38 @@ jobs:
           npm ci
           npm run test
 
+  build-and-push:
+    name: Build & Push Container Image
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api
+          file: ./api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/kotenkodev/doc-search-api:latest
+            ghcr.io/kotenkodev/doc-search-api:${{ github.sha }}
+
   deploy:
     name: Deploy to EC2 via Docker
-    needs: test
+    needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -48,14 +81,69 @@ jobs:
           script: |
             set -e
 
-            APP_DIR="~/react-nest-doc-search"
-            if [ ! -d "$APP_DIR" ]; then
-              git clone https://github.com/${{ github.repository }}.git "$APP_DIR"
-            fi
+            mkdir -p ~/app
+            cd ~/app
 
-            cd "$APP_DIR"
-            git fetch origin main
-            git reset --hard origin/main
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            cat << 'EOF' > docker-compose.prod.yml
+            services:
+              postgres:
+                image: postgres:16-alpine
+                container_name: doc-search-postgres
+                restart: always
+                environment:
+                  POSTGRES_USER: ${DB_USERNAME:-postgres}
+                  POSTGRES_PASSWORD: ${DB_PASSWORD:-postgrespassword}
+                  POSTGRES_DB: ${DB_NAME:-app_db}
+                volumes:
+                  - postgres_data:/var/lib/postgresql/data
+                healthcheck:
+                  test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-app_db}"]
+                  interval: 10s
+                  timeout: 5s
+                  retries: 5
+                networks:
+                  - app-network
+
+              api:
+                image: ghcr.io/kotenkodev/doc-search-api:latest
+                container_name: doc-search-api
+                restart: always
+                ports:
+                  - "3000:3000"
+                environment:
+                  PORT: 3000
+                  NODE_ENV: production
+                  CORS_ORIGINS: ${CORS_ORIGINS:-*}
+                  DB_HOST: postgres
+                  DB_PORT: 5432
+                  DB_USERNAME: ${DB_USERNAME:-postgres}
+                  DB_PASSWORD: ${DB_PASSWORD:-postgrespassword}
+                  DB_NAME: ${DB_NAME:-app_db}
+                  DB_SYNC: "false"
+                  AWS_REGION: ${AWS_REGION:-us-east-1}
+                  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+                  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+                  AWS_BUCKET_NAME: ${AWS_BUCKET_NAME}
+                  AWS_SQS_QUEUE_URL: ${AWS_SQS_QUEUE_URL}
+                  OPENSEARCH_NODE: ${OPENSEARCH_NODE}
+                  OPENSEARCH_AUTH_USERNAME: ${OPENSEARCH_AUTH_USERNAME:-}
+                  OPENSEARCH_AUTH_PASSWORD: ${OPENSEARCH_AUTH_PASSWORD:-}
+                depends_on:
+                  postgres:
+                    condition: service_healthy
+                networks:
+                  - app-network
+
+            volumes:
+              postgres_data:
+                driver: local
+
+            networks:
+              app-network:
+                driver: bridge
+            EOF
 
             cat <<EOF > .env
             PORT=3000
@@ -80,7 +168,19 @@ jobs:
             OPENSEARCH_AUTH_PASSWORD=${{ secrets.OPENSEARCH_AUTH_PASSWORD || '' }}
             EOF
 
-            sudo docker compose -f docker-compose.prod.yml down --remove-orphans || true
-            sudo docker compose -f docker-compose.prod.yml up -d --build
+            if ! docker compose version &> /dev/null && ! command -v docker-compose &> /dev/null; then
+              sudo dnf install -y docker-compose-plugin || (sudo curl -SL "https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose)
+            fi
+
+            if docker compose version &> /dev/null; then
+              COMPOSE="docker compose"
+            elif sudo docker compose version &> /dev/null; then
+              COMPOSE="sudo docker compose"
+            else
+              COMPOSE="sudo docker-compose"
+            fi
+
+            $COMPOSE -f docker-compose.prod.yml pull
+            $COMPOSE -f docker-compose.prod.yml up -d --remove-orphans
 
             echo "Deployment to EC2 completed successfully!"
