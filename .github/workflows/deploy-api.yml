@@ -75,8 +75,8 @@ jobs:
       - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.EC2_HOST || vars.EC2_HOST }}
-          username: ${{ secrets.EC2_USER || vars.EC2_USER || 'ec2-user' }}
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER || 'ec2-user' }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
@@ -148,23 +148,23 @@ jobs:
             cat <<EOF > .env
             PORT=3000
             NODE_ENV=production
-            CORS_ORIGINS=${{ secrets.CORS_ORIGINS || vars.CORS_ORIGINS || '*' }}
+            CORS_ORIGINS=${{ vars.CORS_ORIGINS || '*' }}
 
             DB_HOST=postgres
             DB_PORT=5432
-            DB_USERNAME=${{ secrets.DB_USERNAME || vars.DB_USERNAME || 'postgres' }}
+            DB_USERNAME=${{ vars.DB_USERNAME || 'postgres' }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD || 'postgrespassword' }}
-            DB_NAME=${{ secrets.DB_NAME || vars.DB_NAME || 'app_db' }}
+            DB_NAME=${{ vars.DB_NAME || 'app_db' }}
             DB_SYNC=false
 
-            AWS_REGION=${{ secrets.AWS_REGION || vars.AWS_REGION || 'us-east-1' }}
+            AWS_REGION=${{ vars.AWS_REGION || 'us-east-1' }}
             AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID || '' }}
             AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}
-            AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME || vars.AWS_BUCKET_NAME }}
-            AWS_SQS_QUEUE_URL=${{ secrets.AWS_SQS_QUEUE_URL || vars.AWS_SQS_QUEUE_URL }}
+            AWS_BUCKET_NAME=${{ vars.AWS_BUCKET_NAME }}
+            AWS_SQS_QUEUE_URL=${{ vars.AWS_SQS_QUEUE_URL }}
 
-            OPENSEARCH_NODE=${{ secrets.OPENSEARCH_NODE || vars.OPENSEARCH_NODE }}
-            OPENSEARCH_AUTH_USERNAME=${{ secrets.OPENSEARCH_AUTH_USERNAME || vars.OPENSEARCH_AUTH_USERNAME || '' }}
+            OPENSEARCH_NODE=${{ vars.OPENSEARCH_NODE }}
+            OPENSEARCH_AUTH_USERNAME=${{ secrets.OPENSEARCH_AUTH_USERNAME }}
             OPENSEARCH_AUTH_PASSWORD=${{ secrets.OPENSEARCH_AUTH_PASSWORD || '' }}
             EOF
 

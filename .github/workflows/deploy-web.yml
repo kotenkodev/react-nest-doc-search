@@ -31,9 +31,24 @@ jobs:
         working-directory: web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL || 'http://localhost:3000' }}
+          EC2_HOST: ${{ vars.EC2_HOST }}
         run: |
+          cat <<EOF > vercel.json
+          {
+            "rewrites": [
+              {
+                "source": "/api-proxy/:path*",
+                "destination": "http://${EC2_HOST}:3000/:path*"
+              },
+              {
+                "source": "/(.*)",
+                "destination": "/index.html"
+              }
+            ]
+          }
+          EOF
+
           npx --yes vercel --prod --yes \
             --token="$VERCEL_TOKEN" \
-            --build-env VITE_API_URL="$VITE_API_URL" \
-            --env VITE_API_URL="$VITE_API_URL"
+            --build-env VITE_API_URL="/api-proxy" \
+            --env VITE_API_URL="/api-proxy"

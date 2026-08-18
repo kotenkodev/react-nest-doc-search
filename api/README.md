@@ -59,8 +59,8 @@ cp .env.example .env
 | `AWS_BUCKET_NAME` | AWS S3 bucket name for documents | - | Yes |
 | `AWS_SQS_QUEUE_URL` | AWS SQS Queue URL | - | Yes |
 | `OPENSEARCH_NODE` | OpenSearch endpoint URL | `http://localhost:9200` | Yes |
-| `OPENSEARCH_AUTH_USERNAME` | OpenSearch username | `admin` | No |
-| `OPENSEARCH_AUTH_PASSWORD` | OpenSearch password | `Admin12345!` | No |
+| `OPENSEARCH_AUTH_USERNAME` | OpenSearch username | `admin` | Yes |
+| `OPENSEARCH_AUTH_PASSWORD` | OpenSearch password | `Admin12345!` | Yes |
 
 ---
 

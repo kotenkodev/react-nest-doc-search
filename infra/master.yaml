@@ -9,6 +9,15 @@ Parameters:
     Type: String
     Description: Optional EC2 KeyPair name for SSH access
     Default: ""
+  OpenSearchMasterUser:
+    Type: String
+    Default: admin
+    Description: Master username for OpenSearch
+  OpenSearchMasterPassword:
+    Type: String
+    NoEcho: true
+    Default: "Admin12345!"
+    Description: Master user password for OpenSearch
 
 Resources:
   StorageStack:
@@ -24,6 +33,8 @@ Resources:
       TemplateURL: ./stacks/search.yaml
       Parameters:
         Environment: !Ref Environment
+        MasterUserName: !Ref OpenSearchMasterUser
+        MasterUserPassword: !Ref OpenSearchMasterPassword
 
   ComputeStack:
     Type: AWS::CloudFormation::Stack

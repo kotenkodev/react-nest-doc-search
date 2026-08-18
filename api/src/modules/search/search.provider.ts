@@ -9,12 +9,16 @@ export const openSearchClientProvider: Provider = {
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
     const node = configService.getOrThrow<string>('aws.opensearch.node');
-    const username = configService.get<string>('aws.opensearch.username');
-    const password = configService.get<string>('aws.opensearch.password');
+    const username = configService.getOrThrow<string>(
+      'aws.opensearch.username',
+    );
+    const password = configService.getOrThrow<string>(
+      'aws.opensearch.password',
+    );
 
     return new Client({
       node,
-      ...(username && password ? { auth: { username, password } } : {}),
+      auth: { username, password },
       ssl: {
         rejectUnauthorized: false,
       },

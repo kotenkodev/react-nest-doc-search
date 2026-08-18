@@ -8,8 +8,8 @@ export interface AWSConfig {
   secretAccessKey: string;
   opensearch: {
     node: string;
-    username?: string;
-    password?: string;
+    username: string;
+    password: string;
   };
 }
 
@@ -21,7 +21,7 @@ export const awsConfig = registerAs('aws', (): AWSConfig => ({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
   opensearch: {
     node: process.env.OPENSEARCH_NODE ?? 'http://localhost:9200',
-    username: process.env.OPENSEARCH_AUTH_USERNAME,
-    password: process.env.OPENSEARCH_AUTH_PASSWORD,
+    username: process.env.OPENSEARCH_AUTH_USERNAME ?? '',
+    password: process.env.OPENSEARCH_AUTH_PASSWORD ?? '',
   },
 }));

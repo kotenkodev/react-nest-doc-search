@@ -5,6 +5,15 @@ Parameters:
   Environment:
     Type: String
     Default: production
+  MasterUserName:
+    Type: String
+    Default: admin
+    Description: Master username for OpenSearch internal database
+  MasterUserPassword:
+    Type: String
+    NoEcho: true
+    Default: "Admin12345!"
+    Description: Master user password for OpenSearch internal database
 
 Resources:
   OpenSearchDomain:
@@ -23,6 +32,14 @@ Resources:
         VolumeType: gp3
       EncryptionAtRestOptions:
         Enabled: true
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName: !Ref MasterUserName
+          MasterUserPassword: !Ref MasterUserPassword
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: Policy-Min-TLS-1-2-2019-07
@@ -31,7 +48,9 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/doc-search-ec2-role-${Environment}"
             Action: "es:*"
             Resource: !Sub "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/doc-search-${Environment}/*"
 

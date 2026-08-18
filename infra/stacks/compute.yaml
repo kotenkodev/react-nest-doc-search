@@ -74,6 +74,10 @@ Resources:
                 Resource:
                   - !Ref BucketArn
                   - !Sub "${BucketArn}/*"
+              - Effect: Allow
+                Action:
+                  - "es:*"
+                Resource: "*"
 
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile

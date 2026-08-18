@@ -1,11 +1,6 @@
 name: Deploy Infrastructure (CloudFormation)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "infra/**"
-      - ".github/workflows/deploy-infra.yml"
   workflow_dispatch:
 
 jobs:
@@ -56,4 +51,8 @@ jobs:
             --template-file infra/packaged-master.yaml \
             --stack-name doc-search-stack \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-            --parameter-overrides Environment=production KeyName="${{ vars.KEY_NAME || '' }}"
+            --parameter-overrides \
+              Environment=production \
+              KeyName="${{ vars.KEY_NAME || '' }}" \
+              OpenSearchMasterUser="${{ secrets.OPENSEARCH_AUTH_USERNAME || 'admin' }}" \
+              OpenSearchMasterPassword="${{ secrets.OPENSEARCH_AUTH_PASSWORD || 'Admin12345!' }}"

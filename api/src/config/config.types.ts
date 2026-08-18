@@ -28,7 +28,7 @@ export const appConfigSchema: Joi.ObjectSchema = Joi.object({
 
   AWS_SQS_QUEUE_URL: Joi.string().required(),
 
-  OPENSEARCH_NODE: Joi.string().default('http://localhost:9200'),
-  OPENSEARCH_AUTH_USERNAME: Joi.string().allow('').optional(),
-  OPENSEARCH_AUTH_PASSWORD: Joi.string().allow('').optional(),
+  OPENSEARCH_NODE: Joi.string().required(),
+  OPENSEARCH_AUTH_USERNAME: Joi.string().required(),
+  OPENSEARCH_AUTH_PASSWORD: Joi.string().required(),
 });
