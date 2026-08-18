@@ -23,12 +23,13 @@ export class PdfParserService implements FileParser {
   }
 
   async extractFromFile(filePath: string): Promise<string> {
+    let buffer: Buffer;
     try {
-      const buffer = await readFile(filePath);
-      return await this.extractContent(buffer);
+      buffer = await readFile(filePath);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to parse PDF document: ${message}`);
     }
+    return this.extractContent(buffer);
   }
 }

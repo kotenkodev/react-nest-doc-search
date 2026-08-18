@@ -12,6 +12,7 @@ import { DocumentSearchService } from '../documents/services/document-search.ser
 import { DocumentStatus } from '../database/schema';
 import { Message } from '@aws-sdk/client-sqs';
 import { S3EventRecord, S3SqsEventPayload } from '../sqs/types/s3-event.type';
+import { SseService } from '../sse/sse.service';
 
 @Injectable()
 export class SqsWorkerService
@@ -26,6 +27,7 @@ export class SqsWorkerService
     private readonly documentParserService: DocumentParserService,
     private readonly documentSearchService: DocumentSearchService,
     private readonly storage: StorageService,
+    private readonly sseService: SseService,
   ) {}
 
   onApplicationBootstrap() {
@@ -78,12 +80,13 @@ export class SqsWorkerService
 
     try {
       await this.handleSqsMessage(message.Body);
-      await this.sqsService.delete(message);
     } catch (error) {
       this.logger.error(
         `Failed to process SQS message ID ${message.MessageId}:`,
         error,
       );
+    } finally {
+      await this.sqsService.delete(message);
     }
   }
 
@@ -144,9 +147,12 @@ export class SqsWorkerService
       return;
     }
 
-    if (document.status === DocumentStatus.SUCCESS) {
+    if (
+      document.status === DocumentStatus.SUCCESS ||
+      document.status === DocumentStatus.ERROR
+    ) {
       this.logger.warn(
-        `Document ${document.id} (${storageFilename}) is already processed. Skipping.`,
+        `Document ${document.id} (${storageFilename}) is already in state "${document.status}". Skipping.`,
       );
       return;
     }
@@ -187,6 +193,16 @@ export class SqsWorkerService
         null,
       );
 
+      this.sseService.emit({
+        type: 'document.updated',
+        ownerEmail: document.ownerEmail,
+        data: {
+          id: document.id,
+          userFilename: document.userFilename,
+          status: DocumentStatus.SUCCESS,
+        },
+      });
+
       this.logger.log(
         `Successfully indexed document ${document.id} (${document.userFilename})`,
       );
@@ -202,6 +218,17 @@ export class SqsWorkerService
         DocumentStatus.ERROR,
         errorMessage,
       );
+
+      this.sseService.emit({
+        type: 'document.updated',
+        ownerEmail: document.ownerEmail,
+        data: {
+          id: document.id,
+          userFilename: document.userFilename,
+          status: DocumentStatus.ERROR,
+          error: errorMessage,
+        },
+      });
 
       throw error;
     }
