@@ -27,15 +27,6 @@ Resources:
       Parameters:
         Environment: !Ref Environment
 
-  SearchStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: ./stacks/search.yaml
-      Parameters:
-        Environment: !Ref Environment
-        MasterUserName: !Ref OpenSearchMasterUser
-        MasterUserPassword: !Ref OpenSearchMasterPassword
-
   ComputeStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -45,6 +36,16 @@ Resources:
         QueueArn: !GetAtt StorageStack.Outputs.DocQueueArn
         BucketArn: !GetAtt StorageStack.Outputs.DocumentBucketArn
         KeyName: !Ref KeyName
+
+  SearchStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./stacks/search.yaml
+      Parameters:
+        Environment: !Ref Environment
+        MasterUserName: !Ref OpenSearchMasterUser
+        MasterUserPassword: !Ref OpenSearchMasterPassword
+        AllowedIp: !Sub "${ComputeStack.Outputs.InstancePublicIp}/32"
 
 Outputs:
   DocumentBucketName:

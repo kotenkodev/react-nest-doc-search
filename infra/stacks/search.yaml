@@ -14,6 +14,9 @@ Parameters:
     NoEcho: true
     Default: "Admin12345!"
     Description: Master user password for OpenSearch internal database
+  AllowedIp:
+    Type: String
+    Description: EC2 Public IP address CIDR allowed for HTTP basic authentication
 
 Resources:
   OpenSearchDomain:
@@ -53,6 +56,15 @@ Resources:
                 - !Sub "arn:aws:iam::${AWS::AccountId}:role/doc-search-ec2-role-${Environment}"
             Action: "es:*"
             Resource: !Sub "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/doc-search-${Environment}/*"
+          - Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: "es:*"
+            Resource: !Sub "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/doc-search-${Environment}/*"
+            Condition:
+              IpAddress:
+                aws:SourceIp:
+                  - !Ref AllowedIp
 
 Outputs:
   DomainEndpoint:
