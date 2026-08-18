@@ -144,6 +144,23 @@ export class DocumentSearchService implements OnModuleInit {
   }
 
   async delete(id: string): Promise<void> {
-    await this.searchService.delete(this.INDEX, id);
+    try {
+      await this.searchService.delete(this.INDEX, id);
+    } catch (error: any) {
+      if (
+        error?.meta?.statusCode === 404 ||
+        error?.statusCode === 404 ||
+        error?.body?.result === 'not_found' ||
+        error?.body?.error?.type === 'index_not_found_exception' ||
+        error?.message?.includes('not_found')
+      ) {
+        return;
+      }
+      this.logger.warn(
+        `Failed to delete document ${id} from OpenSearch: ${
+          error instanceof Error ? error.message : error
+        }`,
+      );
+    }
   }
 }

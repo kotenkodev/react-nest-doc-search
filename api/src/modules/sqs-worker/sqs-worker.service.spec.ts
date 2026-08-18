@@ -5,6 +5,7 @@ import { DocumentsRepository } from '../documents/document.repository';
 import { DocumentParserService } from '../parser/document-parser.service';
 import { StorageService } from '../storage/storage.service';
 import { DocumentSearchService } from '../documents/services/document-search.service';
+import { SseService } from '../sse/sse.service';
 import { Message } from '@aws-sdk/client-sqs';
 
 describe('SqsWorkerService', () => {
@@ -69,6 +70,13 @@ describe('SqsWorkerService', () => {
                 callback: (path: string) => Promise<unknown>,
               ) => callback('/tmp/fake-temp.tmp'),
             ),
+          },
+        },
+        {
+          provide: SseService,
+          useValue: {
+            emit: jest.fn(),
+            getEventsStream: jest.fn(),
           },
         },
       ],

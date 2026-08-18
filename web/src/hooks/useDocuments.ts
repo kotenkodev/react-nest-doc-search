@@ -23,6 +23,21 @@ export const useUploadDocumentMutation = () => {
     mutationKey: ["uploadDocument"],
     mutationFn: async (file: File) => {
       const toastId = `upload-${Date.now()}`;
+
+      const MAX_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        const errorMsg = "File size must not exceed 10MB";
+        documentToast.error(file.name, errorMsg, toastId);
+        throw new Error(errorMsg);
+      }
+
+      const isAllowedExt = /\.(pdf|docx)$/i.test(file.name);
+      if (!isAllowedExt) {
+        const errorMsg = "Invalid file type. Only .pdf and .docx files are allowed";
+        documentToast.error(file.name, errorMsg, toastId);
+        throw new Error(errorMsg);
+      }
+
       documentToast.uploading(file.name, 0, toastId);
 
       try {

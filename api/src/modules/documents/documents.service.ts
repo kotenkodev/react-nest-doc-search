@@ -165,6 +165,7 @@ export class DocumentsService {
 
     try {
       await this.repository.delete(document.id);
+      await this.documentSearch.delete(document.id);
       await this.storage.deleteObject(document.storageFilename);
 
       return true;
