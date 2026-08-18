@@ -39,6 +39,8 @@ export default function FilesList({
   const confirm = useConfirm();
   const { getDetailsProps } = useDetails({ closeOnOutsideClick: true });
 
+  const hasSearch = Boolean(searchText?.trim());
+
   const handleDelete = async (id: string, userFilename: string) => {
     const isConfirmed = await confirm({
       title: "Delete document",
@@ -108,24 +110,30 @@ export default function FilesList({
               field: "userFilename",
               rowHeader: true,
             },
-            {
-              width: "grow",
-              header: "Highlight",
-              field: "highlight",
-              renderCell: (row) => {
-                if (!row.highlight) {
-                  return (
-                    <span className="text-gray-500 italic">No highlight</span>
-                  );
-                }
-                return (
-                  <div
-                    className="text-sm max-w-lg line-clamp-2 [&>em]:bg-yellow-200 [&>em]:text-black [&>em]:not-italic [&>em]:font-bold [&>em]:px-0.5 [&>em]:py-0.2 [&>em]:rounded-xs"
-                    dangerouslySetInnerHTML={{ __html: row.highlight }}
-                  />
-                );
-              },
-            },
+            ...(hasSearch
+              ? [
+                  {
+                    width: "grow" as const,
+                    header: "Highlight",
+                    field: "highlight" as const,
+                    renderCell: (row: DocumentItem) => {
+                      if (!row.highlight) {
+                        return (
+                          <span className="text-gray-500 italic">
+                            No highlight
+                          </span>
+                        );
+                      }
+                      return (
+                        <div
+                          className="text-sm max-w-lg line-clamp-2 [&>em]:bg-yellow-200 [&>em]:text-black [&>em]:not-italic [&>em]:font-bold [&>em]:px-0.5 [&>em]:py-0.2 [&>em]:rounded-xs"
+                          dangerouslySetInnerHTML={{ __html: row.highlight }}
+                        />
+                      );
+                    },
+                  },
+                ]
+              : []),
             {
               width: "auto",
               header: "Status",

@@ -10,14 +10,9 @@ export default function SkeletonList() {
         </Table.Title>
         <Table.Skeleton
           aria-labelledby="documents-loading"
-          rows={10}
+          rows={5}
           columns={[
             { width: "auto", header: "Name", id: "name" },
-            {
-              width: "grow",
-              header: "Hightlight",
-              id: "hightlight",
-            },
             {
               width: "auto",
               header: "Status",
