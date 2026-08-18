@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import {
   documentsTable,
   DocumentStatus,
@@ -18,6 +18,22 @@ export class DocumentsRepository {
       .select()
       .from(documentsTable)
       .where(eq(documentsTable.ownerEmail, email));
+  }
+
+  async getDocumentsByIds(
+    ids: string[],
+    email: string,
+  ): Promise<Document[]> {
+    if (!ids.length) return [];
+    return await this.db
+      .select()
+      .from(documentsTable)
+      .where(
+        and(
+          eq(documentsTable.ownerEmail, email),
+          inArray(documentsTable.id, ids),
+        ),
+      );
   }
 
   async getDocumentById(id: string): Promise<Document> {

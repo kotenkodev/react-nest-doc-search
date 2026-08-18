@@ -4,30 +4,90 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { StorageService } from '../storage/storage.service';
-import { SearchService } from '../search/search.service';
 import { DocumentsRepository } from './document.repository';
 import { CreateDocumentDto } from './dtos/create-document.dto';
 import { Document, DocumentStatus } from '../database/schema';
 import { randomUUID } from 'crypto';
+import { DocumentSearchService } from './services/document-search.service';
+
+function highlightExactSubstring(text: string, searchText: string): string {
+  if (!text || !searchText) return text;
+  const terms = searchText
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+  if (terms.length === 0) return text;
+
+  const termRegex = new RegExp(`(${terms.join('|')})`, 'gi');
+
+  return text.replace(/<em>(.*?)<\/em>/gi, (match, innerText) => {
+    if (termRegex.test(innerText)) {
+      return innerText.replace(termRegex, '<em>$1</em>');
+    }
+    return `<em>${innerText}</em>`;
+  });
+}
+
+export type DocumentWithHighlight = Document & {
+  highlight?: string;
+};
 
 @Injectable()
 export class DocumentsService {
   constructor(
     private readonly storage: StorageService,
-    private readonly searchService: SearchService,
+    private readonly documentSearch: DocumentSearchService,
     private readonly repository: DocumentsRepository,
   ) {}
 
   async getDocuments(
     email: string,
     searchText: string | undefined,
-  ): Promise<{ documents: Document[]; total: number }> {
-    // if (searchText) {
-    //   const documents = await this.repository.getDocumentsBySearch(
-    //     email,
-    //     searchText,
-    //   );
-    // }
+  ): Promise<{ documents: DocumentWithHighlight[]; total: number }> {
+    const trimmedSearch = searchText?.trim();
+    if (trimmedSearch) {
+      const searchResult = await this.documentSearch.search(
+        email,
+        trimmedSearch,
+      );
+      const ids = searchResult.hits.map((hit) => hit.id);
+
+      if (ids.length === 0) {
+        return {
+          documents: [],
+          total: 0,
+        };
+      }
+
+      const documents = await this.repository.getDocumentsByIds(ids, email);
+      const documentMap = new Map(documents.map((doc) => [doc.id, doc]));
+
+      const documentsWithHighlights: DocumentWithHighlight[] = [];
+
+      for (const hit of searchResult.hits) {
+        const doc = documentMap.get(hit.id);
+        if (!doc) continue;
+
+        const rawHighlight = hit._highlight?.content?.join(' ... ');
+
+        const highlight = rawHighlight
+          ? highlightExactSubstring(rawHighlight, trimmedSearch)
+          : undefined;
+
+        documentsWithHighlights.push({
+          ...doc,
+          ...(highlight ? { highlight } : {}),
+        });
+      }
+
+      return {
+        documents: documentsWithHighlights,
+        total: documentsWithHighlights.length,
+      };
+    }
+
     const documents = await this.repository.getDocuments(email);
 
     return {

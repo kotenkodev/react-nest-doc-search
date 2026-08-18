@@ -3,7 +3,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { DocumentsRepository } from './document.repository';
 import { StorageService } from '../storage/storage.service';
-import { SearchService } from '../search/search.service';
+import { DocumentSearchService } from './services/document-search.service';
 import { Document } from '../database/schema';
 import { CreateDocumentDto } from './dtos/create-document.dto';
 
@@ -11,9 +11,8 @@ describe('DocumentsService', () => {
   let service: DocumentsService;
   let repository: jest.Mocked<DocumentsRepository>;
   let storageService: jest.Mocked<StorageService>;
-  let searchService: jest.Mocked<SearchService>;
+  let documentSearchService: jest.Mocked<DocumentSearchService>;
 
-  // Sample mock document for testing
   const mockDocument: Document = {
     id: 'doc-123',
     ownerEmail: 'user@example.com',
@@ -29,7 +28,9 @@ describe('DocumentsService', () => {
   beforeEach(async () => {
     const mockRepo = {
       getDocuments: jest.fn(),
+      getDocumentsByIds: jest.fn(),
       getDocumentById: jest.fn(),
+      getDocumentByStorageFilename: jest.fn(),
       create: jest.fn(),
       setStatus: jest.fn(),
       delete: jest.fn(),
@@ -41,7 +42,7 @@ describe('DocumentsService', () => {
       deleteObject: jest.fn(),
     };
 
-    const mockSearch = {
+    const mockDocumentSearch = {
       index: jest.fn(),
       search: jest.fn(),
       delete: jest.fn(),
@@ -52,14 +53,14 @@ describe('DocumentsService', () => {
         DocumentsService,
         { provide: DocumentsRepository, useValue: mockRepo },
         { provide: StorageService, useValue: mockStorage },
-        { provide: SearchService, useValue: mockSearch },
+        { provide: DocumentSearchService, useValue: mockDocumentSearch },
       ],
     }).compile();
 
     service = module.get<DocumentsService>(DocumentsService);
     repository = module.get(DocumentsRepository);
     storageService = module.get(StorageService);
-    searchService = module.get(SearchService);
+    documentSearchService = module.get(DocumentSearchService);
   });
 
   it('should be defined', () => {
@@ -67,7 +68,7 @@ describe('DocumentsService', () => {
   });
 
   describe('getDocuments', () => {
-    it('should return a list of documents and total count for an email', async () => {
+    it('should return a list of documents and total count for an email when no search text is provided', async () => {
       repository.getDocuments.mockResolvedValue([mockDocument]);
 
       const result = await service.getDocuments('user@example.com', undefined);
@@ -76,6 +77,135 @@ describe('DocumentsService', () => {
       expect(result).toEqual({
         documents: [mockDocument],
         total: 1,
+      });
+    });
+
+    it('should search documents via DocumentSearchService and hydrate from repository with highlights', async () => {
+      documentSearchService.search.mockResolvedValue({
+        hits: [
+          {
+            id: 'doc-123',
+            ownerEmail: 'user@example.com',
+            userFilename: 'contract.pdf',
+            content: 'some text',
+            uploadedAt: '2026-01-01T00:00:00.000Z',
+            _id: 'doc-123',
+            _score: 1.5,
+            _highlight: {
+              content: ['<em>contract</em> agreement'],
+            },
+          },
+        ],
+        total: 1,
+      });
+      repository.getDocumentsByIds.mockResolvedValue([mockDocument]);
+
+      const result = await service.getDocuments('user@example.com', 'contract');
+
+      expect(documentSearchService.search).toHaveBeenCalledWith(
+        'user@example.com',
+        'contract',
+      );
+      expect(repository.getDocumentsByIds).toHaveBeenCalledWith(
+        ['doc-123'],
+        'user@example.com',
+      );
+      expect(result).toEqual({
+        documents: [
+          {
+            ...mockDocument,
+            highlight: '<em>contract</em> agreement',
+          },
+        ],
+        total: 1,
+      });
+    });
+
+    it('should highlight only the exact matched substring when partial word matches', async () => {
+      documentSearchService.search.mockResolvedValue({
+        hits: [
+          {
+            id: 'doc-123',
+            ownerEmail: 'user@example.com',
+            userFilename: 'contract.pdf',
+            content: 'using Postgres database',
+            uploadedAt: '2026-01-01T00:00:00.000Z',
+            _id: 'doc-123',
+            _score: 1.5,
+            _highlight: {
+              content: ['using <em>Postgres</em> database'],
+            },
+          },
+        ],
+        total: 1,
+      });
+      repository.getDocumentsByIds.mockResolvedValue([mockDocument]);
+
+      const result = await service.getDocuments('user@example.com', 'post');
+
+      expect(result).toEqual({
+        documents: [
+          {
+            ...mockDocument,
+            highlight: 'using <em>Post</em>gres database',
+          },
+        ],
+        total: 1,
+      });
+    });
+
+    it('should keep highlight on fuzzy typo matches when searching with typo query', async () => {
+      documentSearchService.search.mockResolvedValue({
+        hits: [
+          {
+            id: 'doc-123',
+            ownerEmail: 'user@example.com',
+            userFilename: 'contract.pdf',
+            content: 'parsed text should be indexed',
+            uploadedAt: '2026-01-01T00:00:00.000Z',
+            _id: 'doc-123',
+            _score: 1.5,
+            _highlight: {
+              content: ['parsed <em>text</em> should be indexed'],
+            },
+          },
+        ],
+        total: 1,
+      });
+      repository.getDocumentsByIds.mockResolvedValue([mockDocument]);
+
+      const result = await service.getDocuments('user@example.com', 'texs');
+
+      expect(result).toEqual({
+        documents: [
+          {
+            ...mockDocument,
+            highlight: 'parsed <em>text</em> should be indexed',
+          },
+        ],
+        total: 1,
+      });
+    });
+
+    it('should return empty list when search returns no hits', async () => {
+      documentSearchService.search.mockResolvedValue({
+        hits: [],
+        total: 0,
+      });
+
+      const result = await service.getDocuments(
+        'user@example.com',
+        'nonexistent',
+      );
+
+      expect(documentSearchService.search).toHaveBeenCalledWith(
+        'user@example.com',
+        'nonexistent',
+      );
+      expect(repository.getDocumentsByIds).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        documents: [],
+        total: 0,
       });
     });
   });
