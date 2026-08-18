@@ -12,6 +12,13 @@ Parameters:
   InstanceType:
     Type: String
     Default: t3.micro
+  KeyName:
+    Type: String
+    Description: Optional EC2 KeyPair name for SSH access
+    Default: ""
+
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
 
 Resources:
   EC2Role:
@@ -77,6 +84,7 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: ami-0c101bfb11491b10a
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref "AWS::NoValue"]
       IamInstanceProfile: !Ref EC2InstanceProfile
       SecurityGroupIds:
         - !Ref BackendSecurityGroup
@@ -87,8 +95,10 @@ Resources:
           dnf install -y docker git
           systemctl enable docker
           systemctl start docker
+          usermod -aG docker ec2-user
           curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           chmod +x /usr/local/bin/docker-compose
+          ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose || true
 
 Outputs:
   InstancePublicIp:

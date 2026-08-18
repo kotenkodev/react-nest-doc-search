@@ -5,30 +5,35 @@ Parameters:
   Environment:
     Type: String
     Default: production
+  KeyName:
+    Type: String
+    Description: Optional EC2 KeyPair name for SSH access
+    Default: ""
 
 Resources:
   StorageStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://my-template-bucket.s3.amazonaws.com/storage.yaml
+      TemplateURL: ./stacks/storage.yaml
       Parameters:
         Environment: !Ref Environment
 
   SearchStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://my-template-bucket.s3.amazonaws.com/search.yaml
+      TemplateURL: ./stacks/search.yaml
       Parameters:
         Environment: !Ref Environment
 
   ComputeStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://my-template-bucket.s3.amazonaws.com/compute.yaml
+      TemplateURL: ./stacks/compute.yaml
       Parameters:
         Environment: !Ref Environment
         QueueArn: !GetAtt StorageStack.Outputs.DocQueueArn
         BucketArn: !GetAtt StorageStack.Outputs.DocumentBucketArn
+        KeyName: !Ref KeyName
 
 Outputs:
   DocumentBucketName:

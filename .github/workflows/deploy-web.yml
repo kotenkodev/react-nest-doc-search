@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "web/**"
+      - ".github/workflows/deploy-web.yml"
 
 jobs:
   build-and-deploy:
@@ -12,18 +13,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build React App
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install & Build React App
+        working-directory: web
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
         run: |
-          cd web
           npm ci
           npm run build
 
-      - name: Sync to React S3 Web Bucket
-        uses: jakejarvis/s3-sync-action@master
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          args: --delete
-        env:
-          AWS_S3_BUCKET: "react-web-hosting-production-12345"
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          SOURCE_DIR: "web/dist"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Deploy to S3 Web Hosting Bucket
+        run: |
+          aws s3 sync web/dist s3://${{ secrets.REACT_WEB_S3_BUCKET || vars.REACT_WEB_S3_BUCKET }} --delete

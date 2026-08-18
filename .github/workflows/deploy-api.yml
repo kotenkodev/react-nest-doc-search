@@ -1,19 +1,85 @@
-name: Deploy NestJS to EC2
+name: Deploy NestJS API & Database to EC2
 
 on:
   push:
     branches: [main]
     paths:
       - "api/**"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy-api.yml"
 
 jobs:
-  build-and-test:
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Test NestJS
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install & Run Unit Tests
+        working-directory: api
         run: |
-          cd api
           npm ci
           npm run test
+
+  deploy:
+    name: Deploy to EC2 via Docker
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy on EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST || vars.EC2_HOST }}
+          username: ${{ secrets.EC2_USER || vars.EC2_USER || 'ec2-user' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            APP_DIR="~/react-nest-doc-search"
+            if [ ! -d "$APP_DIR" ]; then
+              git clone https://github.com/${{ github.repository }}.git "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+
+            cat <<EOF > .env
+            PORT=3000
+            NODE_ENV=production
+            CORS_ORIGINS=${{ secrets.CORS_ORIGINS || vars.CORS_ORIGINS || '*' }}
+
+            DB_HOST=postgres
+            DB_PORT=5432
+            DB_USERNAME=${{ secrets.DB_USERNAME || vars.DB_USERNAME || 'postgres' }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD || 'postgrespassword' }}
+            DB_NAME=${{ secrets.DB_NAME || vars.DB_NAME || 'app_db' }}
+            DB_SYNC=false
+
+            AWS_REGION=${{ secrets.AWS_REGION || vars.AWS_REGION || 'us-east-1' }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID || '' }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}
+            AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME || vars.AWS_BUCKET_NAME }}
+            AWS_SQS_QUEUE_URL=${{ secrets.AWS_SQS_QUEUE_URL || vars.AWS_SQS_QUEUE_URL }}
+
+            OPENSEARCH_NODE=${{ secrets.OPENSEARCH_NODE || vars.OPENSEARCH_NODE }}
+            OPENSEARCH_AUTH_USERNAME=${{ secrets.OPENSEARCH_AUTH_USERNAME || vars.OPENSEARCH_AUTH_USERNAME || '' }}
+            OPENSEARCH_AUTH_PASSWORD=${{ secrets.OPENSEARCH_AUTH_PASSWORD || '' }}
+            EOF
+
+            sudo docker compose -f docker-compose.prod.yml down --remove-orphans || true
+            sudo docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "Deployment to EC2 completed successfully!"

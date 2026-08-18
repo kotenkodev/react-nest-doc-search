@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: doc-search-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgrespassword}
+      POSTGRES_DB: ${DB_NAME:-app_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-app_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: doc-search-api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgrespassword}
+      DB_NAME: ${DB_NAME:-app_db}
+      DB_SYNC: "false"
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_BUCKET_NAME: ${AWS_BUCKET_NAME}
+      AWS_SQS_QUEUE_URL: ${AWS_SQS_QUEUE_URL}
+      OPENSEARCH_NODE: ${OPENSEARCH_NODE}
+      OPENSEARCH_AUTH_USERNAME: ${OPENSEARCH_AUTH_USERNAME:-}
+      OPENSEARCH_AUTH_PASSWORD: ${OPENSEARCH_AUTH_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
