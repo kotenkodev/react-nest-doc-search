@@ -1,5 +1,5 @@
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { SearchIcon, UploadIcon } from "@primer/octicons-react";
+import { SearchIcon, UploadIcon, XCircleFillIcon } from "@primer/octicons-react";
 import {
   Button,
   CounterLabel,
@@ -39,11 +39,20 @@ export default function SearchBar({
           monospace
           type="search"
           trailingVisual={
-            <IconButton
-              variant="invisible"
-              icon={SearchIcon}
-              aria-label="Search"
-            />
+            searchText ? (
+              <IconButton
+                variant="invisible"
+                icon={XCircleFillIcon}
+                aria-label="Clear search"
+                onClick={() => onSearchChange("")}
+              />
+            ) : (
+              <IconButton
+                variant="invisible"
+                icon={SearchIcon}
+                aria-label="Search"
+              />
+            )
           }
           placeholder="Search documents..."
           value={searchText}
